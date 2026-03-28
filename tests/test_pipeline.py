@@ -3,17 +3,11 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-
-# Ensure the project root is importable
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 from extractor import (
     ENV_FIXTURE,
@@ -29,7 +23,7 @@ from notebooklm_export import (
 )
 from briefing_writer import SYSTEM_PROMPT, write_briefing_markdown
 
-SAMPLE_FIXTURE = PROJECT_ROOT / "fixtures" / "sample_extraction.json"
+SAMPLE_FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "sample_extraction.json"
 
 
 # ---------------------------------------------------------------------------
@@ -411,3 +405,18 @@ class TestIntegrationSmokeTest:
         content = out_file.read_text(encoding="utf-8")
         assert "美卡论坛" in content
         assert "线索" in content
+
+    def test_markdown_input_skips_extraction(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        """--markdown-input should reuse an existing file without MCP extraction."""
+        monkeypatch.setenv("GEMINI_API_KEY", "")
+        # Do NOT set EXTRACTION_FIXTURE_PATH — extraction should be skipped entirely
+        monkeypatch.delenv(ENV_FIXTURE, raising=False)
+        monkeypatch.delenv("MCP_SERVER_COMMAND", raising=False)
+
+        existing_md = tmp_path / "existing.md"
+        existing_md.write_text("# Pre-built markdown\n\nSome content.", encoding="utf-8")
+
+        from run_pipeline import main
+
+        rc = main(["--markdown-input", str(existing_md)])
+        assert rc == 0

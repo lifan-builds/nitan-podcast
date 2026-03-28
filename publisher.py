@@ -76,12 +76,17 @@ def episode_metadata(
     markdown: str,
     *,
     week_label: str | None = None,
+    threads: list[dict[str, str]] | None = None,
 ) -> dict[str, str]:
-    """Return episode title and description (Chinese) derived from the export Markdown."""
+    """Return episode title and description (Chinese) derived from the export Markdown.
+
+    If *threads* is provided, uses them directly instead of re-parsing from markdown.
+    """
     label = week_label or current_week_label()
     title = f"【{SERIES_NAME}】{SERIES_ZH} · {label}"
 
-    threads = _extract_threads(markdown)
+    if threads is None:
+        threads = _extract_threads(markdown)
     titles = [t.get("title", "") for t in threads if t.get("title")]
     if titles:
         bullets = "\n".join(f"- {t}" for t in titles)
@@ -232,12 +237,17 @@ def write_forum_post(
     *,
     audio_url: str | None = None,
     extra_links: dict[str, str] | None = None,
+    threads: list[dict[str, str]] | None = None,
 ) -> Path:
-    """Read the exported Markdown, generate an episode reply, write to disk."""
+    """Read the exported Markdown, generate an episode reply, write to disk.
+
+    If *threads* is provided, passes them to episode_metadata() directly
+    instead of re-parsing the markdown via regex.
+    """
     md_path = Path(markdown_export_path).resolve()
     md_content = md_path.read_text(encoding="utf-8")
 
-    meta = episode_metadata(md_content)
+    meta = episode_metadata(md_content, threads=threads)
     post = episode_reply_markdown(meta, audio_url=audio_url, extra_links=extra_links)
 
     if output_path is None:

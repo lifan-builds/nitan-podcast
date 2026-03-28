@@ -68,6 +68,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Connect to MCP server, print tool names/schemas as JSON, exit",
     )
     parser.add_argument(
+        "--markdown-input",
+        type=Path,
+        default=None,
+        help="Skip extraction; use this existing Markdown file as input (for reuse across pipeline phases)",
+    )
+    parser.add_argument(
         "--publish-notebooklm",
         action="store_true",
         help="After export: upload Markdown to NotebookLM, generate Audio Overview, download MP3 (requires notebooklm-py + notebooklm login)",
@@ -77,11 +83,6 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=None,
         help="Path for downloaded audio (default: releases/weekly_meika_YYYY-Www.mp3 if --dated else releases/weekly_meika_podcast.mp3)",
-    )
-    parser.add_argument(
-        "--publish-soundcloud",
-        action="store_true",
-        help="Upload MP3 to SoundCloud (requires soundcloud_upload.py login + SOUNDCLOUD_CLIENT_ID)",
     )
     parser.add_argument(
         "--generate-post",
@@ -108,6 +109,12 @@ def main(argv: list[str] | None = None) -> int:
         "--episode-duration",
         default="00:06:00",
         help="Episode duration as HH:MM:SS for RSS feed (default: 00:06:00)",
+    )
+    parser.add_argument(
+        "--mp3-path",
+        type=Path,
+        default=None,
+        help="Path to local MP3 file (used for RSS enclosure file size detection)",
     )
     args = parser.parse_args(argv)
 
@@ -146,21 +153,31 @@ def main(argv: list[str] | None = None) -> int:
         filename = DEFAULT_MARKDOWN_NAME
 
     try:
-        threads = extract_weekly_key_info()
-        if not threads:
-            log.error("Extraction returned no threads")
-            return 1
-
-        raw_md = threads_to_source_markdown(threads)
-
-        if args.skip_briefing:
-            body = raw_md
-            log.info("Skipping Gemini briefing")
+        if args.markdown_input:
+            md_input = Path(args.markdown_input).resolve()
+            if not md_input.is_file():
+                log.error("Markdown input not found: %s", md_input)
+                return 1
+            body = md_input.read_text(encoding="utf-8")
+            path = md_input
+            threads = None
+            log.info("Using existing Markdown: %s", path)
         else:
-            body = write_briefing_markdown(raw_md)
+            threads = extract_weekly_key_info()
+            if not threads:
+                log.error("Extraction returned no threads")
+                return 1
 
-        path = export_for_notebooklm(body, export_dir=export_dir, filename=filename)
-        log.info("Wrote NotebookLM source: %s", path)
+            raw_md = threads_to_source_markdown(threads)
+
+            if args.skip_briefing:
+                body = raw_md
+                log.info("Skipping Gemini briefing")
+            else:
+                body = write_briefing_markdown(raw_md)
+
+            path = export_for_notebooklm(body, export_dir=export_dir, filename=filename)
+            log.info("Wrote NotebookLM source: %s", path)
 
         audio_path = None
 
@@ -176,27 +193,15 @@ def main(argv: list[str] | None = None) -> int:
             publish_weekly_audio(path, audio_path)
             log.info("Downloaded Audio Overview: %s", audio_path)
 
-        # SoundCloud upload (after we have an MP3)
-        soundcloud_url = args.audio_url
-        if args.publish_soundcloud and audio_path and audio_path.is_file():
-            from publisher import current_week_label
-            from soundcloud_upload import upload_episode
-
-            week_label = current_week_label()
-            log.info("Uploading to SoundCloud...")
-            soundcloud_url = upload_episode(audio_path, week_label)
-            log.info("SoundCloud URL: %s", soundcloud_url)
-
-        # Forum post (uses SoundCloud URL if available)
         if args.generate_post:
-            post_path = write_forum_post(path, audio_url=soundcloud_url)
+            post_path = write_forum_post(path, audio_url=args.audio_url, threads=threads)
             log.info("Wrote forum post: %s", post_path)
 
         # RSS feed
         if args.generate_rss:
             from rss_feed import generate_rss_feed
 
-            rss_audio_url = soundcloud_url or args.audio_url
+            rss_audio_url = args.audio_url
             if not rss_audio_url:
                 iso = date.today().isocalendar()
                 rss_audio_url = (
@@ -204,11 +209,14 @@ def main(argv: list[str] | None = None) -> int:
                     f"download/v{iso.year}-W{iso.week:02d}/"
                     f"weekly_meika_{iso.year}-W{iso.week:02d}.mp3"
                 )
+            rss_mp3 = args.mp3_path or audio_path
             feed_path = generate_rss_feed(
                 path,
                 args.rss_output,
                 audio_url=rss_audio_url,
                 duration=args.episode_duration,
+                threads=threads,
+                mp3_path=rss_mp3,
             )
             log.info("Updated RSS feed: %s", feed_path)
 

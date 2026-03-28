@@ -90,7 +90,6 @@ Tool names and parameters are **version-specific**; see [`FINDINGS.md`](FINDINGS
 | Platform | Link |
 | -------- | ---- |
 | **RSS** | `https://lifan-builds.github.io/nitan-podcast/feed.xml` |
-| **Apple Podcasts** | [Nitan Podcast](https://podcasts.apple.com/podcast/nitan-podcast/id1234567890) *(search "Nitan Podcast")* |
 | **美卡论坛** | [announcement thread](https://www.uscardforum.com/t/topic/494521) |
 
 ## Publication (美卡论坛 + GitHub Releases)
@@ -101,11 +100,11 @@ Tool names and parameters are **version-specific**; see [`FINDINGS.md`](FINDINGS
 # Generate forum post alongside the weekly export
 python run_pipeline.py --skip-briefing --dated --publish-notebooklm --generate-post
 
-# With an audio URL (e.g. after uploading to GitHub Releases or SoundCloud)
+# With an audio URL (e.g. after uploading to GitHub Releases)
 python run_pipeline.py --skip-briefing --dated --generate-post --audio-url "https://..."
 ```
 
-**Current audio hosting:** [GitHub Releases](https://github.com/lifan-builds/nitan-podcast/releases) (download link in forum post). Inline audio player on the forum is blocked — see [`FINDINGS.md`](FINDINGS.md) for details and workaround options.
+**Audio hosting:** [GitHub Releases](https://github.com/lifan-builds/nitan-podcast/releases) (download link in forum post).
 
 ### Weekly operator checklist
 
@@ -133,24 +132,15 @@ The [weekly workflow](.github/workflows/weekly-export.yml) runs the full pipelin
 
 **Failure handling:** If NotebookLM session expires, the job still produces Markdown + RSS (without audio). Re-run `notebooklm login` on your Mac and trigger manually.
 
-### Self-hosted runner setup (one-time)
+### Self-hosted runner
+
+The runner (`nitan-mac`) is installed and online. To verify:
 
 ```bash
-# 1. Verify prerequisites
-scripts/setup_runner.sh
-
-# 2. Install the runner (follow GitHub UI instructions)
-#    https://github.com/lifan-builds/nitan-podcast/settings/actions/runners/new
-#    Select macOS, download + configure, add label ‘macos’
-
-# 3. Install as a service
-cd actions-runner && ./svc.sh install && ./svc.sh start
-
-# 4. Verify
-gh api repos/lifan-builds/nitan-podcast/actions/runners --jq ‘.runners[].name’
+gh api repos/lifan-builds/nitan-podcast/actions/runners --jq ‘.runners[] | {name, status}’
 ```
 
-See [`scripts/setup_runner.sh`](scripts/setup_runner.sh) for detailed prerequisite checks.
+See [`scripts/setup_runner.sh`](scripts/setup_runner.sh) for prerequisite checks if re-installing.
 
 ## Why not TTS in code?
 
@@ -213,9 +203,9 @@ cp .env.example .env
 | `notebooklm_export.py` | Write UTF-8 export files |
 | `notebooklm_audio.py` | Optional **`notebooklm-py`**: upload MD, generate Audio Overview, download MP3 |
 | `publisher.py` | Episode metadata + 美卡论坛 Discourse post: announcement thread + weekly episode replies |
-| `soundcloud_upload.py` | SoundCloud OAuth 2.1 upload (**blocked** — API registration closed since ~2018) |
 | `rss_feed.py` | Podcast RSS 2.0 feed generator with iTunes namespace |
-| `tests/test_pipeline.py` | 44 pytest tests (offline, no network) |
+| `tests/test_pipeline.py` | pytest: extractor, export, briefing, CLI args, integration smoke |
+| `tests/test_publisher.py` | pytest: thread extraction, episode metadata, forum post generation |
 | `tests/test_rss_feed.py` | 19 RSS feed tests |
 | `fixtures/sample_extraction.json` | Sample data for dry runs |
 | `scripts/run_live_demo.sh` | One-command live MCP → `demo/output/DEMO_notebooklm_weekly.md` → `--publish-notebooklm` → `releases/*.mp3` when auth/env OK |

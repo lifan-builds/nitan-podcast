@@ -94,6 +94,19 @@ def _load_fixture() -> list[dict[str, Any]] | None:
     raise ValueError(f"{ENV_FIXTURE}: JSON must be a list of objects or a single object")
 
 
+def _unwrap_dict_or_list(data: Any) -> list[dict[str, Any]]:
+    """Extract a list of dicts from a raw JSON value (list, dict with known keys, or single dict)."""
+    if isinstance(data, list):
+        return [x for x in data if isinstance(x, dict)]
+    if isinstance(data, dict):
+        for key in ("threads", "posts", "items", "data"):
+            inner = data.get(key)
+            if isinstance(inner, list):
+                return [x for x in inner if isinstance(x, dict)]
+        return [data]
+    return []
+
+
 def tool_result_to_threads(result: types.CallToolResult) -> list[dict[str, Any]]:
     if result.isError:
         parts = []
@@ -103,15 +116,7 @@ def tool_result_to_threads(result: types.CallToolResult) -> list[dict[str, Any]]
         raise RuntimeError("MCP tool returned isError=true: " + (" ".join(parts) or "(no text)"))
 
     if result.structuredContent is not None:
-        sc: Any = result.structuredContent
-        if isinstance(sc, list):
-            return [x for x in sc if isinstance(x, dict)]
-        if isinstance(sc, dict):
-            for key in ("threads", "posts", "items", "data"):
-                inner = sc.get(key)
-                if isinstance(inner, list):
-                    return [x for x in inner if isinstance(x, dict)]
-            return [sc]
+        return _unwrap_dict_or_list(result.structuredContent)
 
     texts: list[str] = []
     for block in result.content:
@@ -122,14 +127,7 @@ def tool_result_to_threads(result: types.CallToolResult) -> list[dict[str, Any]]
         return []
     try:
         data = json.loads(raw)
-        if isinstance(data, list):
-            return [x for x in data if isinstance(x, dict)]
-        if isinstance(data, dict):
-            for key in ("threads", "posts", "items", "data"):
-                inner = data.get(key)
-                if isinstance(inner, list):
-                    return [x for x in inner if isinstance(x, dict)]
-            return [data]
+        return _unwrap_dict_or_list(data)
     except json.JSONDecodeError:
         pass
     return [{"title": "forum_digest", "raw_text": raw}]

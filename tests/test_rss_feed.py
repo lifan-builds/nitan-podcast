@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 from publisher import episode_guid
+
+SAMPLE_FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "sample_extraction.json"
 from rss_feed import (
     ATOM_NS,
     DEFAULT_FEED_PATH,
@@ -24,8 +21,6 @@ from rss_feed import (
     _podcast_config,
     generate_rss_feed,
 )
-
-SAMPLE_FIXTURE = PROJECT_ROOT / "fixtures" / "sample_extraction.json"
 
 
 # ---------------------------------------------------------------------------
@@ -171,12 +166,11 @@ class TestFeedPersistence:
 
 class TestGenerateRssFeed:
 
-    def _run_generate(self, tmp_path: Path, **kwargs):
+    def _run_generate(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, **kwargs):
         from extractor import _load_fixture, threads_to_source_markdown
         from notebooklm_export import export_for_notebooklm
 
-        import os
-        os.environ["EXTRACTION_FIXTURE_PATH"] = str(SAMPLE_FIXTURE)
+        monkeypatch.setenv("EXTRACTION_FIXTURE_PATH", str(SAMPLE_FIXTURE))
         threads = _load_fixture()
         md = threads_to_source_markdown(threads)
         md_path = export_for_notebooklm(md, export_dir=tmp_path, filename="test.md")
@@ -190,8 +184,7 @@ class TestGenerateRssFeed:
         return generate_rss_feed(md_path, feed_path, **defaults)
 
     def test_creates_feed(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setenv("EXTRACTION_FIXTURE_PATH", str(SAMPLE_FIXTURE))
-        result = self._run_generate(tmp_path)
+        result = self._run_generate(tmp_path, monkeypatch)
         assert result.is_file()
         content = result.read_text(encoding="utf-8")
         assert "<rss" in content
@@ -199,18 +192,16 @@ class TestGenerateRssFeed:
         assert "example.com/episode.mp3" in content
 
     def test_upsert_idempotent(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setenv("EXTRACTION_FIXTURE_PATH", str(SAMPLE_FIXTURE))
-        self._run_generate(tmp_path)
-        self._run_generate(tmp_path)  # same GUID
+        self._run_generate(tmp_path, monkeypatch)
+        self._run_generate(tmp_path, monkeypatch)  # same GUID
         feed = tmp_path / "feed.xml"
         tree = ET.parse(feed)
         items = tree.findall(".//item")
         assert len(items) == 1
 
     def test_different_episodes_accumulate(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setenv("EXTRACTION_FIXTURE_PATH", str(SAMPLE_FIXTURE))
         # First episode
-        self._run_generate(tmp_path)
+        self._run_generate(tmp_path, monkeypatch)
 
         # Manually add a second item with different GUID to simulate a prior week
         feed = tmp_path / "feed.xml"
@@ -224,13 +215,12 @@ class TestGenerateRssFeed:
         tree.write(feed, xml_declaration=True, encoding="unicode")
 
         # Re-run: should keep both
-        self._run_generate(tmp_path)
+        self._run_generate(tmp_path, monkeypatch)
         tree2 = ET.parse(feed)
         items = tree2.findall(".//item")
         assert len(items) == 2
 
     def test_newest_first(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setenv("EXTRACTION_FIXTURE_PATH", str(SAMPLE_FIXTURE))
         # Seed an old item
         feed = tmp_path / "feed.xml"
         config = _podcast_config()
@@ -244,10 +234,10 @@ class TestGenerateRssFeed:
         ET.ElementTree(rss).write(feed, xml_declaration=True, encoding="unicode")
 
         # Generate current episode
-        self._run_generate(tmp_path)
+        self._run_generate(tmp_path, monkeypatch)
         tree = ET.parse(feed)
         items = tree.findall(".//item")
         assert len(items) == 2
-        # Newest should be first
+        # Newest should be first (not the 2025 seed item)
         first_guid = items[0].find("guid").text
-        assert first_guid.startswith("nitan-podcast-2026") or first_guid.startswith("nitan-podcast-2025") is False
+        assert not first_guid.startswith("nitan-podcast-2025")

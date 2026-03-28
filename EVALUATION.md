@@ -28,7 +28,7 @@ Objective grading criteria and verification contracts for work tracked in [`PLAN
 ### Pytest suite (offline)
 
 - **Verification Method:** `cd /path/to/nitan-podcast && .venv/bin/python -m pytest tests/ -v`
-- **Acceptance Threshold:** All 44 tests pass; no network calls; completes in <5s.
+- **Acceptance Threshold:** All tests pass; no network calls; completes in <5s.
 
 ### Forum post generation
 

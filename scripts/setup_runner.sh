@@ -81,6 +81,13 @@ else
   warn "notebooklm-py not installed — run: .venv/bin/pip install -r requirements-integrations.txt && playwright install chromium"
 fi
 
+# Playwright browsers
+if "$ROOT/.venv/bin/python" -c "from playwright.sync_api import sync_playwright" 2>/dev/null; then
+  ok "Playwright available"
+else
+  warn "Playwright not available — run: playwright install chromium"
+fi
+
 echo ""
 if [ $ERRORS -gt 0 ]; then
   echo -e "${RED}$ERRORS issue(s) found. Fix them before installing the runner.${NC}"

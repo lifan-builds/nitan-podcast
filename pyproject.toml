@@ -1,0 +1,9 @@
+[project]
+name = "nitan-pod"
+version = "0.1.0"
+description = "USCardForum weekly AI podcast pipeline (NotebookLM-first)"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

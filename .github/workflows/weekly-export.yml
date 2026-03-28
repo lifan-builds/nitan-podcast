@@ -6,7 +6,7 @@
 #
 # Self-hosted runner prerequisites:
 #   - Python 3.10+ venv at .venv/ with requirements.txt installed
-#   - .env configured (MCP_SERVER_*, NOTEBOOKLM_*, optional GEMINI_API_KEY)
+#   - ~/.nitan-podcast/.env configured (MCP_SERVER_*, NOTEBOOKLM_*, optional GEMINI_API_KEY)
 #   - notebooklm login completed (~/.notebooklm/storage_state.json)
 #   - gh auth login completed
 #   - Node.js 20+ (for npx / nitan-mcp)
@@ -42,7 +42,6 @@ jobs:
         working-directory: ${{ github.workspace }}
     env:
       PY: .venv/bin/python
-      DOTENV_SOURCE: /Users/lfan/Project/nitan-pod/.env
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,11 +49,12 @@ jobs:
 
       - name: Load .env from host
         run: |
-          if [ -f "$DOTENV_SOURCE" ]; then
-            cp "$DOTENV_SOURCE" .env
-            echo "::notice::Loaded .env from $DOTENV_SOURCE"
+          DOTENV="$HOME/.nitan-podcast/.env"
+          if [ -f "$DOTENV" ]; then
+            cp "$DOTENV" .env
+            echo "::notice::Loaded .env from $DOTENV"
           else
-            echo "::error::.env not found at $DOTENV_SOURCE"
+            echo "::error::.env not found at $DOTENV"
             exit 1
           fi
 
@@ -87,20 +87,21 @@ jobs:
             $PY -m pip install -q -r requirements-integrations.txt
           fi
 
-      # --- Phase 1: Extract + Export (headless) ---
+      # --- Phase 1: Extract + Export (headless, single MCP call) ---
       - name: Extract and export Markdown
         if: steps.check.outputs.skip != 'true'
         id: export
         run: |
+          MD_FILE="exports/weekly_meika_${{ steps.week.outputs.iso_week }}.md"
           FLAGS="--dated --log-level INFO"
           # Skip briefing if no Gemini key in .env
           if ! grep -q '^GEMINI_API_KEY=.\+' .env 2>/dev/null; then
             FLAGS="$FLAGS --skip-briefing"
           fi
           $PY run_pipeline.py $FLAGS
-          echo "md_path=exports/weekly_meika_${{ steps.week.outputs.iso_week }}.md" >> $GITHUB_OUTPUT
+          echo "md_path=$MD_FILE" >> $GITHUB_OUTPUT
 
-      # --- Phase 2: NotebookLM Audio (may fail if session expired) ---
+      # --- Phase 2: NotebookLM Audio (reuses Phase 1 markdown, no MCP) ---
       - name: Generate audio (NotebookLM)
         if: >-
           steps.check.outputs.skip != 'true'
@@ -110,8 +111,8 @@ jobs:
         continue-on-error: true
         run: |
           MP3="releases/weekly_meika_${{ steps.week.outputs.iso_week }}.mp3"
-          $PY run_pipeline.py --dated --publish-notebooklm \
-            --notebooklm-audio-out "$MP3" --skip-briefing --log-level INFO
+          $PY run_pipeline.py --markdown-input "${{ steps.export.outputs.md_path }}" \
+            --publish-notebooklm --notebooklm-audio-out "$MP3" --log-level INFO
           echo "mp3_path=$MP3" >> $GITHUB_OUTPUT
           echo "has_audio=true" >> $GITHUB_OUTPUT
 
@@ -137,14 +138,18 @@ jobs:
           fi
           echo "audio_url=${AUDIO_URL:-}" >> $GITHUB_OUTPUT
 
-      # --- Phase 4: RSS Feed + Forum Post ---
+      # --- Phase 4: RSS Feed + Forum Post (reuses Phase 1 markdown, no MCP) ---
       - name: Generate RSS feed and forum post
         if: steps.check.outputs.skip != 'true'
         run: |
           AUDIO_URL="${{ steps.release.outputs.audio_url }}"
-          FLAGS="--dated --skip-briefing --generate-post --generate-rss --log-level INFO"
+          MP3="${{ steps.audio.outputs.mp3_path }}"
+          FLAGS="--markdown-input ${{ steps.export.outputs.md_path }} --generate-post --generate-rss --log-level INFO"
           if [ -n "$AUDIO_URL" ]; then
             FLAGS="$FLAGS --audio-url $AUDIO_URL"
+          fi
+          if [ -n "$MP3" ] && [ -f "$MP3" ]; then
+            FLAGS="$FLAGS --mp3-path $MP3"
           fi
           $PY run_pipeline.py $FLAGS
 

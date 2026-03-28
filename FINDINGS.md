@@ -60,29 +60,9 @@ Official announcement and setup guide (美卡论坛): [**【Nitan MCP】你的�
 
 ## Discoveries
 
-- **`google.generativeai` deprecation:** As of 2026, importing `google.generativeai` may log a **FutureWarning** directing users to the newer **`google.genai`** SDK. `briefing_writer.py` still uses `google-generativeai` from `requirements.txt`; consider migrating to `google.genai` in a follow-up when stable for your environment.
+- **`google.genai` migration (done):** Migrated from deprecated `google-generativeai` to `google-genai` SDK. The old package logged FutureWarnings; the new SDK uses `genai.Client(api_key=...)` with `client.models.generate_content()`.
 
 - **NotebookLM GitHub landscape (2026-03):** GitHub API `search/repositories?q=notebooklm` surfaces **`teng-lin/notebooklm-py`** as the highest-star project with explicit **Audio Overview** + **download** docs; **`PleasePrompto/notebooklm-skill`** and several **`notebooklm-mcp`** repos target agents/MCP rather than a minimal weekly pipeline. Star counts drift over time — re-check before adopting.
-
-### SoundCloud API registration closed (~2018)
-
-**Status:** SoundCloud stopped accepting new API app registrations around 2018. Attempting to register at [soundcloud.com/you/apps](https://soundcloud.com/you/apps) returns "Something went wrong while creating the app." This is a known, long-standing issue confirmed by multiple developer reports and SoundCloud's own developer portal.
-
-**Impact on nitan-podcast:** `soundcloud_upload.py` was created with full OAuth 2.1 PKCE flow but is **unusable** without an existing registered app's `SOUNDCLOUD_CLIENT_ID` / `SOUNDCLOUD_CLIENT_SECRET`. The code is kept in case access opens or someone with an existing app ID contributes.
-
-**Workaround for forum audio:** If a user manually uploads an MP3 via [soundcloud.com](https://soundcloud.com) (free tier, no API needed), the resulting track URL auto-embeds on Discourse via onebox. This is the most promising near-term path for inline playback on 美卡论坛.
-
-### 美卡论坛 MP3 upload restriction
-
-The forum only allows image uploads: `jpg, jpeg, png, gif, heic, heif, webp, avif, svg`. No admin override is available to regular users. Discourse's built-in `![name|audio](upload://...)` audio player syntax works **only** with server-hosted audio files, which requires admin to whitelist `.mp3` in site settings (`authorized_extensions`).
-
-**Options explored:**
-1. ~~Direct MP3 upload~~ — blocked by extension whitelist
-2. ~~SoundCloud API~~ — app registration closed
-3. **SoundCloud manual upload** — free tier track URL auto-embeds via Discourse onebox ✓ (manual)
-4. **GitHub Releases download link** — works but no inline player (current interim)
-5. **Ask forum admin** to add `mp3` to `authorized_extensions` — untested
-6. **Spotify for Podcasters** — would need admin to whitelist iframe/embed domain
 
 ### NotebookLM podcast length tuning (4 iterations)
 
@@ -100,6 +80,4 @@ The forum only allows image uploads: `jpg, jpeg, png, gif, heic, heif, webp, avi
 | Error | Context | Resolution | Date |
 | ----- | ------- | ---------- | ---- |
 | `FileNotFoundError: Storage file not found: ~/.notebooklm/storage_state.json` — *Run 'notebooklm login' to authenticate first.* | `run_pipeline.py --publish-notebooklm` or `./scripts/run_live_demo.sh` without prior CLI auth | Run **`notebooklm login`** once (Playwright browser); ensure **`pip install -r requirements-integrations.txt`** and **`playwright install chromium`** if needed. **Not** satisfied by Google sign-in only in regular Chrome. | 2026-03-26 |
-| SoundCloud app registration: "Something went wrong while creating the app" | User attempted to register at soundcloud.com/you/apps | **No fix** — SoundCloud API registration closed since ~2018. See research above. | 2026-03-27 |
-| 美卡论坛 MP3 upload: "不被允许（允许的扩展名：jpg, jpeg, png, gif...）" | Attempted drag-and-drop MP3 upload in Discourse editor | **No fix** for regular users — admin must add `mp3` to `authorized_extensions`. Workaround: GitHub Release download link. | 2026-03-27 |
 | `write_forum_post()` overwrites NotebookLM source | `stem.replace("notebooklm", "forum_post")` didn't match dated filenames like `weekly_meika_2026-W13.md` | Fixed: check if "notebooklm" is in stem; if not, append `_forum_post` suffix. | 2026-03-27 |

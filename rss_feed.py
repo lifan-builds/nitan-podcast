@@ -163,32 +163,50 @@ def _find_item_guid(item: ET.Element) -> str | None:
 # Main entry point
 # ---------------------------------------------------------------------------
 
+def _detect_file_size(audio_url: str, mp3_path: Path | None = None) -> int:
+    """Best-effort MP3 file size detection: explicit path > URL-derived local > 0."""
+    if mp3_path and Path(mp3_path).is_file():
+        return Path(mp3_path).stat().st_size
+    url_match = re.search(r"[\w-]+\.mp3", audio_url)
+    if url_match:
+        local = Path("releases") / url_match.group(0)
+        if local.is_file():
+            return local.stat().st_size
+    return 0
+
+
 def generate_rss_feed(
     markdown_export_path: Path,
     feed_path: Path | None = None,
     *,
     audio_url: str,
     duration: str = "00:06:00",
+    threads: list[dict[str, str]] | None = None,
+    file_size: int | None = None,
+    mp3_path: Path | None = None,
 ) -> Path:
     """Generate or update the podcast RSS feed with the current episode.
 
     Reads episode metadata from the exported Markdown, upserts the episode
     into the feed (matched by GUID), and writes the XML.
+
+    If *threads* is provided, passes them to episode_metadata() directly
+    instead of re-parsing the markdown via regex.
+
+    *file_size* overrides auto-detection. *mp3_path* points to the local MP3
+    for size detection when the URL filename doesn't match.
     """
     out = (feed_path or DEFAULT_FEED_PATH).resolve()
     md_path = Path(markdown_export_path).resolve()
     md_content = md_path.read_text(encoding="utf-8")
 
-    meta = episode_metadata(md_content)
+    meta = episode_metadata(md_content, threads=threads)
     guid = episode_guid(meta["week_label"])
 
-    # Try to get file size from local MP3
-    file_size = 0
-    url_match = re.search(r"weekly_meika_[\w-]+\.mp3", audio_url)
-    if url_match:
-        local_mp3 = Path("releases") / url_match.group(0)
-        if local_mp3.is_file():
-            file_size = local_mp3.stat().st_size
+    if file_size is None:
+        file_size = _detect_file_size(audio_url, mp3_path)
+    if file_size == 0:
+        logger.warning("MP3 file size is 0 — podcast players may refuse to play this episode")
 
     pub_date = datetime.now(timezone.utc)
 
@@ -217,9 +235,8 @@ def generate_rss_feed(
     out.parent.mkdir(parents=True, exist_ok=True)
     tree = ET.ElementTree(rss)
     tree.write(out, xml_declaration=True, encoding="unicode")
-    # Ensure trailing newline
-    with open(out, "a", encoding="utf-8") as f:
-        f.write("\n")
+    # ElementTree.write() omits trailing newline; append one for POSIX compliance
+    out.write_text(out.read_text(encoding="utf-8").rstrip() + "\n", encoding="utf-8")
 
     logger.info("RSS feed updated: %s (%d episode(s))", out, len(items))
     return out
