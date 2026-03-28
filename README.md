@@ -109,21 +109,48 @@ python run_pipeline.py --skip-briefing --dated --generate-post --audio-url "http
 
 ### Weekly operator checklist
 
-1. Run pipeline with `--publish-notebooklm --generate-post --generate-rss --dated`
-2. Upload MP3 to GitHub Releases (`gh release create v2026-Www releases/weekly_meika_2026-Www.mp3`)
-3. Commit updated `docs/feed.xml` and push (GitHub Pages auto-deploys the RSS feed)
-4. Copy `exports/*_forum_reply.md` content as a reply to the [announcement thread](https://www.uscardforum.com/t/topic/494521)
-5. Update audio URL in the reply if using GitHub Release link
+The workflow is fully automated — the only manual step is posting to the forum:
 
-## Cron example (weekly)
+1. Copy `exports/*_forum_reply.md` content as a reply to the [announcement thread](https://www.uscardforum.com/t/topic/494521) (~30 sec)
+
+Everything else (extract → audio → GitHub Release → RSS → push) runs automatically.
+
+## GitHub Actions (Automated Weekly Pipeline)
+
+The [weekly workflow](.github/workflows/weekly-export.yml) runs the full pipeline on a **self-hosted macOS runner** — your Mac.
+
+**Schedule:** 3 retry windows every Monday (6 AM / 12 PM / 6 PM PST). Your Mac only needs to be on for **one** of the three windows. The first successful run publishes the episode; subsequent triggers detect the existing GitHub Release and skip.
+
+**Pipeline steps (all automatic):**
+
+1. MCP extract → Gemini briefing → export Markdown
+2. NotebookLM → generate Audio Overview → MP3
+3. Create GitHub Release with MP3 attached
+4. Generate RSS feed (`docs/feed.xml`) + forum post draft
+5. Commit and push RSS feed (GitHub Pages auto-deploys)
+
+**Manual trigger:** Go to Actions → `weekly-podcast` → Run workflow. Inputs: `skip_audio` (boolean), `audio_url` (override URL).
+
+**Failure handling:** If NotebookLM session expires, the job still produces Markdown + RSS (without audio). Re-run `notebooklm login` on your Mac and trigger manually.
+
+### Self-hosted runner setup (one-time)
 
 ```bash
-0 6 * * 1 cd /path/to/nitan-pod && .venv/bin/python run_pipeline.py --dated >> logs/weekly.log 2>&1
+# 1. Verify prerequisites
+scripts/setup_runner.sh
+
+# 2. Install the runner (follow GitHub UI instructions)
+#    https://github.com/lifan-builds/nitan-podcast/settings/actions/runners/new
+#    Select macOS, download + configure, add label ‘macos’
+
+# 3. Install as a service
+cd actions-runner && ./svc.sh install && ./svc.sh start
+
+# 4. Verify
+gh api repos/lifan-builds/nitan-podcast/actions/runners --jq ‘.runners[].name’
 ```
 
-## GitHub Actions
-
-See [`.github/workflows/weekly-export.yml`](.github/workflows/weekly-export.yml). Configure repository **secrets** for MCP and optional `GEMINI_API_KEY`, or rely on `EXTRACTION_FIXTURE_PATH` / the workflow’s sample fixture fallback for dry runs. Artifacts: uploaded `exports/` as `notebooklm-weekly-md`.
+See [`scripts/setup_runner.sh`](scripts/setup_runner.sh) for detailed prerequisite checks.
 
 ## Why not TTS in code?
 
@@ -139,7 +166,7 @@ This repo can call **[notebooklm-py](https://github.com/teng-lin/notebooklm-py)*
 4. Create a dedicated notebook in the UI; copy **`NOTEBOOKLM_NOTEBOOK_ID`** into `.env` (URL or `notebooklm metadata --json`).
 5. Run with **`--publish-notebooklm`**. Audio is written under **`releases/`** (default filename matches `--dated` or `weekly_meika_podcast.mp3`). Override with **`--notebooklm-audio-out`**.
 
-**CI:** GitHub-hosted runners are a poor fit for interactive login and rotating Google sessions; keep **`--publish-notebooklm`** for **local or self-hosted** jobs unless you build a credential story yourself. The default [weekly workflow](.github/workflows/weekly-export.yml) only exports Markdown.
+**CI:** The [weekly workflow](.github/workflows/weekly-export.yml) runs `--publish-notebooklm` on a **self-hosted macOS runner** with a persistent NotebookLM session. GitHub-hosted runners cannot use this feature.
 
 Tune generation via env: `NOTEBOOKLM_AUDIO_LANGUAGE` (default `zh`), `NOTEBOOKLM_AUDIO_INSTRUCTIONS`, `NOTEBOOKLM_AUDIO_FORMAT` (`deep_dive` / `brief` / `critique` / `debate`), `NOTEBOOKLM_AUDIO_LENGTH` (`short` / `default` / `long`), timeouts — see [`.env.example`](.env.example) and [`notebooklm_audio.py`](notebooklm_audio.py).
 
@@ -187,9 +214,12 @@ cp .env.example .env
 | `notebooklm_audio.py` | Optional **`notebooklm-py`**: upload MD, generate Audio Overview, download MP3 |
 | `publisher.py` | Episode metadata + 美卡论坛 Discourse post: announcement thread + weekly episode replies |
 | `soundcloud_upload.py` | SoundCloud OAuth 2.1 upload (**blocked** — API registration closed since ~2018) |
+| `rss_feed.py` | Podcast RSS 2.0 feed generator with iTunes namespace |
 | `tests/test_pipeline.py` | 44 pytest tests (offline, no network) |
+| `tests/test_rss_feed.py` | 19 RSS feed tests |
 | `fixtures/sample_extraction.json` | Sample data for dry runs |
 | `scripts/run_live_demo.sh` | One-command live MCP → `demo/output/DEMO_notebooklm_weekly.md` → `--publish-notebooklm` → `releases/*.mp3` when auth/env OK |
+| `scripts/setup_runner.sh` | Self-hosted runner prerequisite checker |
 | `EVALUATION.md` | Verification contracts for pipeline and demo |
 | `demo/README.md` | Demo instructions |
 | `requirements-integrations.txt` | Optional **`notebooklm-py[browser]`** for programmatic NotebookLM |

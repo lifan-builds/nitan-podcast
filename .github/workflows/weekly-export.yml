@@ -1,70 +1,169 @@
-# Weekly NotebookLM source export (no secrets in repo).
+# Full weekly podcast pipeline on self-hosted macOS runner.
 #
-# Secrets (examples):
-#   MCP_SERVER_COMMAND=npx
-#   MCP_EXTRACT_TOOL=discourse_list_top_topics
-#   MCP_EXTRACT_TOOL_ARGUMENTS={"period":"weekly","limit":10}
-#   GEMINI_API_KEY (optional — omit for --skip-briefing)
+# Retry window: 3 cron triggers across Monday (PST). First successful run
+# publishes the episode; subsequent triggers detect the existing GitHub Release
+# and skip (idempotent).
 #
-# MCP_SERVER_ARGS: if unset and MCP_SERVER_COMMAND is set, the workflow builds:
-#   ["-y","@nitansde/mcp@latest","--python_path","<repo>/.venv/bin/python"]
-# so Cloudflare deps from requirements.txt are used. Override via secret if needed.
+# Self-hosted runner prerequisites:
+#   - Python 3.10+ venv at .venv/ with requirements.txt installed
+#   - .env configured (MCP_SERVER_*, NOTEBOOKLM_*, optional GEMINI_API_KEY)
+#   - notebooklm login completed (~/.notebooklm/storage_state.json)
+#   - gh auth login completed
+#   - Node.js 20+ (for npx / nitan-mcp)
 #
-# Or use EXTRACTION_FIXTURE_PATH (repo variable) or rely on fixtures/sample_extraction.json fallback.
-#
-# This workflow does NOT run run_pipeline.py --publish-notebooklm: notebooklm-py needs
-# interactive "notebooklm login" and stored browser session — use locally or self-hosted runners.
+# See scripts/setup_runner.sh for one-time setup.
 
-name: weekly-export
+name: weekly-podcast
 
 on:
   schedule:
-    - cron: "15 6 * * 1"
-  workflow_dispatch: {}
+    - cron: "0 14 * * 1"   # Monday  6 AM PST / 2 PM UTC
+    - cron: "0 20 * * 1"   # Monday 12 PM PST / 8 PM UTC
+    - cron: "0 2 * * 2"    # Monday  6 PM PST / Tue 2 AM UTC
+  workflow_dispatch:
+    inputs:
+      skip_audio:
+        description: "Skip NotebookLM audio generation"
+        type: boolean
+        default: false
+      audio_url:
+        description: "Override audio URL (skip NotebookLM, use this URL)"
+        type: string
+        default: ""
 
 jobs:
-  export:
-    runs-on: ubuntu-latest
+  weekly-podcast:
+    runs-on: [self-hosted, macos]
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    env:
+      PY: .venv/bin/python
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install dependencies
+      - name: Compute ISO week
+        id: week
         run: |
-          python -m venv .venv
-          .venv/bin/pip install -r requirements.txt
+          ISO_WEEK=$(date +%G-W%V)
+          echo "iso_week=$ISO_WEEK" >> $GITHUB_OUTPUT
+          echo "tag=v${ISO_WEEK}" >> $GITHUB_OUTPUT
 
-      - name: Run pipeline
-        env:
-          MCP_SERVER_COMMAND: ${{ secrets.MCP_SERVER_COMMAND }}
-          MCP_SERVER_ARGS: ${{ secrets.MCP_SERVER_ARGS }}
-          MCP_EXTRACT_TOOL: ${{ secrets.MCP_EXTRACT_TOOL }}
-          MCP_EXTRACT_TOOL_ARGUMENTS: ${{ secrets.MCP_EXTRACT_TOOL_ARGUMENTS }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          EXTRACTION_FIXTURE_PATH: ${{ vars.EXTRACTION_FIXTURE_PATH }}
+      - name: Check if already published this week
+        id: check
         run: |
-          PY="$(pwd)/.venv/bin/python"
-          if [ -z "$MCP_SERVER_COMMAND" ] && [ -z "$EXTRACTION_FIXTURE_PATH" ]; then
-            export EXTRACTION_FIXTURE_PATH="fixtures/sample_extraction.json"
+          TAG="${{ steps.week.outputs.tag }}"
+          if gh release view "$TAG" --repo "${{ github.repository }}" &>/dev/null; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "::notice::Episode $TAG already published — skipping."
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
           fi
-          if [ -n "$MCP_SERVER_COMMAND" ] && [ -z "$MCP_SERVER_ARGS" ]; then
-            export MCP_SERVER_ARGS=$("$PY" -c "import json,os; print(json.dumps(['-y','@nitansde/mcp@latest','--python_path',os.path.abspath('$PY')]))")
-          fi
+
+      - name: Install / update dependencies
+        if: steps.check.outputs.skip != 'true'
+        run: $PY -m pip install -q -r requirements.txt
+
+      # --- Phase 1: Extract + Export (headless) ---
+      - name: Extract and export Markdown
+        if: steps.check.outputs.skip != 'true'
+        id: export
+        run: |
           FLAGS="--dated --log-level INFO"
-          if [ -z "$GEMINI_API_KEY" ]; then
+          # Skip briefing if no Gemini key in .env
+          if ! grep -q '^GEMINI_API_KEY=.\+' .env 2>/dev/null; then
             FLAGS="$FLAGS --skip-briefing"
           fi
-          .venv/bin/python run_pipeline.py $FLAGS
+          $PY run_pipeline.py $FLAGS
+          echo "md_path=exports/weekly_meika_${{ steps.week.outputs.iso_week }}.md" >> $GITHUB_OUTPUT
 
-      - uses: actions/upload-artifact@v4
+      # --- Phase 2: NotebookLM Audio (may fail if session expired) ---
+      - name: Generate audio (NotebookLM)
+        if: >-
+          steps.check.outputs.skip != 'true'
+          && inputs.skip_audio != true
+          && inputs.audio_url == ''
+        id: audio
+        continue-on-error: true
+        run: |
+          MP3="releases/weekly_meika_${{ steps.week.outputs.iso_week }}.mp3"
+          $PY run_pipeline.py --dated --publish-notebooklm \
+            --notebooklm-audio-out "$MP3" --skip-briefing --log-level INFO
+          echo "mp3_path=$MP3" >> $GITHUB_OUTPUT
+          echo "has_audio=true" >> $GITHUB_OUTPUT
+
+      # --- Phase 3: GitHub Release ---
+      - name: Create GitHub Release
+        if: >-
+          steps.check.outputs.skip != 'true'
+          && (steps.audio.outputs.has_audio == 'true' || inputs.audio_url != '')
+        id: release
+        run: |
+          TAG="${{ steps.week.outputs.tag }}"
+          ISO_WEEK="${{ steps.week.outputs.iso_week }}"
+          MP3="${{ steps.audio.outputs.mp3_path }}"
+
+          if [ -n "${{ inputs.audio_url }}" ]; then
+            AUDIO_URL="${{ inputs.audio_url }}"
+          elif [ -n "$MP3" ] && [ -f "$MP3" ]; then
+            gh release create "$TAG" "$MP3" \
+              --title "泥潭播客 · ${ISO_WEEK}" \
+              --notes "RSS: https://lifan-builds.github.io/nitan-podcast/feed.xml" \
+              2>/dev/null || true
+            AUDIO_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/$(basename "$MP3")"
+          fi
+          echo "audio_url=${AUDIO_URL:-}" >> $GITHUB_OUTPUT
+
+      # --- Phase 4: RSS Feed + Forum Post ---
+      - name: Generate RSS feed and forum post
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          AUDIO_URL="${{ steps.release.outputs.audio_url }}"
+          FLAGS="--dated --skip-briefing --generate-post --generate-rss --log-level INFO"
+          if [ -n "$AUDIO_URL" ]; then
+            FLAGS="$FLAGS --audio-url $AUDIO_URL"
+          fi
+          $PY run_pipeline.py $FLAGS
+
+      # --- Phase 5: Commit + Push RSS ---
+      - name: Commit and push RSS feed
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/feed.xml
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update RSS feed ${{ steps.week.outputs.iso_week }}"
+            git push
+          fi
+
+      # --- Artifacts ---
+      - name: Upload exports
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
         with:
-          name: notebooklm-weekly-md
+          name: weekly-podcast-${{ steps.week.outputs.iso_week }}
           path: exports/
           if-no-files-found: warn
+
+      - name: Job summary
+        if: always()
+        run: |
+          ISO_WEEK="${{ steps.week.outputs.iso_week }}"
+          echo "### Weekly Podcast ${ISO_WEEK}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check.outputs.skip }}" = "true" ]; then
+            echo "- **Skipped** — already published this week" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Export: done" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ steps.audio.outputs.has_audio }}" = "true" ]; then
+              echo "- Audio: done (${{ steps.release.outputs.audio_url }})" >> $GITHUB_STEP_SUMMARY
+            elif [ "${{ steps.audio.outcome }}" = "failure" ]; then
+              echo "- Audio: FAILED (check notebooklm login)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- Audio: skipped" >> $GITHUB_STEP_SUMMARY
+            fi
+            echo "- RSS: updated" >> $GITHUB_STEP_SUMMARY
+            echo "- Forum post: ready in exports/" >> $GITHUB_STEP_SUMMARY
+          fi
