@@ -87,7 +87,14 @@ flowchart LR
 - [x] (2026-03-26) **Demo ready:** `scripts/run_live_demo.sh` + `demo/README.md`; `requirements.txt` includes **cloudscraper/curl-cffi/brotli**; `.env.example` documents **`--python_path`** for Nitan MCP; live run verified (`discourse_list_top_topics` weekly → `demo/output/DEMO_notebooklm_weekly.md`).
 - [x] (2026-03-26) **Demo script:** `run_live_demo.sh` chains **`--publish-notebooklm`**; operator completes **`notebooklm login`** + **`.env`** for end-to-end MP3 (see `EVALUATION.md` / `README.md`).
 - [x] (2026-03-27) **Publication v1:** `publisher.py` generates episode metadata (中文 title, topic bullets) + 美卡论坛 Discourse post from exported Markdown; `run_pipeline.py --generate-post` (+ `--audio-url`); managed podcast host chosen as distribution model; forum post is primary channel.
+- [x] (2026-03-27) **E2E pipeline verified:** Full live run MCP → Gemini → NotebookLM → MP3 succeeded (exit 0, ~20MB MP3, ~6 min). Podcast quality approved after 4 tuning iterations.
+- [x] (2026-03-27) **GitHub repo:** Created [lifan-builds/nitan-podcast](https://github.com/lifan-builds/nitan-podcast); initial release v2026-W13 with MP3 on GitHub Releases.
+- [x] (2026-03-27) **Podcast tuning:** 4 iterations → `NOTEBOOKLM_AUDIO_LENGTH=short`, 7 threads, fast-paced instructions with keyword hooks, no forum intro → ~6 min approved.
+- [x] (2026-03-27) **Forum post generated:** Announcement thread (`exports/nitan_podcast_announcement.md`) + episode reply (`exports/weekly_meika_2026-W13_forum_reply.md`) with topic table and GitHub Release download link.
+- [x] (2026-03-27) **SoundCloud integration:** `soundcloud_upload.py` created (OAuth 2.1 PKCE, upload, token refresh) but **blocked** — SoundCloud API app registration closed since ~2018. See `FINDINGS.md`.
+- [x] (2026-03-27) **Test suite:** 44 pytest tests in `tests/test_pipeline.py` — all pass, no network calls.
 - [ ] **Publication v2:** Choose specific managed host (Spotify for Podcasters / 小宇宙 / etc.); fill canonical feed URL / directory links; optional upload API automation.
+- [ ] **Audio embedding:** Solve inline player on 美卡论坛 — options: manual SoundCloud web upload (free tier auto-embeds via Discourse onebox), ask forum admin to whitelist .mp3 uploads, or Spotify for Podcasters with admin iframe whitelist.
 - [x] (2026-03-26) **Execute:** **[notebooklm-py](https://github.com/teng-lin/notebooklm-py)** integration — [`notebooklm_audio.py`](notebooklm_audio.py), `run_pipeline.py --publish-notebooklm` / `--notebooklm-audio-out`, `releases/` + `.gitignore`, docs + `.env.example`; GHA remains export-only.
 - [ ] Optional / experimental: isolated DIY **Playwright** on NotebookLM UI — only if SDK is insufficient and team accepts brittleness / ToS risk (`FINDINGS.md`).
 
@@ -98,6 +105,15 @@ flowchart LR
 
 - Observation: Operators may assume **signed-in Chrome** satisfies NotebookLM automation; **`notebooklm-py`** only uses Playwright **`notebooklm login`** → **`storage_state.json`**.
   Evidence: `FileNotFoundError` for `~/.notebooklm/storage_state.json` when running `--publish-notebooklm` without CLI login; logged in `FINDINGS.md` Error Log.
+
+- Observation: **SoundCloud API app registration** has been closed since ~2018. Creating a new app at soundcloud.com/you/apps returns "Something went wrong while creating the app." No workaround exists for programmatic upload without an existing registered app.
+  Evidence: User attempted registration 2026-03-27; web research confirmed closure.
+
+- Observation: **美卡论坛 blocks MP3 uploads** — allowed extensions: jpg, jpeg, png, gif, heic, heif, webp, avif, svg. No admin override available to regular users.
+  Evidence: User attempted drag-and-drop upload 2026-03-27; forum returned error listing allowed extensions.
+
+- Observation: **Podcast length is primarily controlled by `NOTEBOOKLM_AUDIO_LENGTH`** and thread count, not by text instructions alone. Adding "6-8分钟" to instructions had no effect on a `default` length setting (~20 min output).
+  Evidence: 4 tuning iterations; only `short` + 7 threads + concise instructions yielded ~6 min.
 
 ## Decision Log
 
@@ -129,13 +145,25 @@ flowchart LR
   **Rationale:** Forum audience is the primary listener base; managed host provides RSS + directories for broader reach with minimal ops.
   **Date:** 2026-03-27
 
+- **Decision:** **GitHub Releases** as interim audio hosting; download link in forum post until embeddable player solved.
+  **Rationale:** 美卡论坛 blocks MP3 upload; SoundCloud API closed; GitHub Releases is free, reliable, and already set up.
+  **Date:** 2026-03-27
+
+- **Decision:** **Podcast tuning formula:** `NOTEBOOKLM_AUDIO_LENGTH=short` + 7 threads + fast-paced `_DEFAULT_INSTRUCTIONS` (no forum intro, keyword hooks, "点到为止").
+  **Rationale:** 4 iterations tested; this combination yields ~6 min episodes matching user preference.
+  **Date:** 2026-03-27
+
+- **Decision:** **Publication pattern** follows Nitan MCP thread: single announcement thread + weekly episode replies on 美卡论坛.
+  **Rationale:** Proven pattern on the forum; keeps all episodes discoverable in one thread.
+  **Date:** 2026-03-27
+
 - **Decision:** **v1 programmatic NotebookLM** uses **`notebooklm-py`** + `NotebookLMClient.from_storage()` after **`notebooklm login`**; gated by **`--publish-notebooklm`**; **`NOTEBOOKLM_NOTEBOOK_ID`** required; **append** new file source each run.
   **Rationale:** Single maintained SDK vs DIY Playwright; unofficial API risk accepted and documented in `FINDINGS.md`.
   **Date:** 2026-03-26
 
 ## Outcomes & Retrospective
 
-(To be filled when the first weekly export feeds NotebookLM, Audio Overview meets expectations, and **listeners can access the episode** via the chosen publication path.)
+- **2026-03-27 — First episode published (v2026-W13).** Full E2E pipeline verified: MCP extraction (7 threads) → Gemini briefing → NotebookLM Audio Overview (~6 min, short length) → MP3 downloaded. GitHub Release created at [lifan-builds/nitan-podcast/releases/tag/v2026-W13](https://github.com/lifan-builds/nitan-podcast/releases/tag/v2026-W13). Forum reply generated with topic table + download link. Audio quality approved after 4 tuning iterations. **Remaining:** inline audio player on 美卡论坛 (blocked by MP3 upload restriction + SoundCloud API closure); managed podcast host for RSS/directories (Publication v2).
 
 ## Context and Orientation
 

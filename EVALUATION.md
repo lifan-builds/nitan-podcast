@@ -25,6 +25,24 @@ Objective grading criteria and verification contracts for work tracked in [`PLAN
 - **Verification Method:** Same as live demo publish path, or `run_pipeline.py ... --publish-notebooklm` with valid env.
 - **Acceptance Threshold:** MP3 present at logged path; NotebookLM notebook shows new source.
 
+### Pytest suite (offline)
+
+- **Verification Method:** `cd /path/to/nitan-podcast && .venv/bin/python -m pytest tests/ -v`
+- **Acceptance Threshold:** All 44 tests pass; no network calls; completes in <5s.
+
+### Forum post generation
+
+- **Verification Method:** `python run_pipeline.py --skip-briefing --dated --generate-post` with fixture or live MCP.
+- **Acceptance Threshold:** Produces `exports/*_forum_reply.md` (or `_forum_post.md`) with topic table, stats columns, and audio link placeholder. Does **not** overwrite the NotebookLM source file.
+
+### E2E pipeline (live)
+
+- **Verification Method:** `.env` configured with MCP + NotebookLM; `python run_pipeline.py --skip-briefing --dated --publish-notebooklm --generate-post`
+- **Acceptance Threshold:** Exit 0; MP3 at `releases/weekly_meika_YYYY-Www.mp3` (~5-8 min); forum reply at `exports/`; NotebookLM notebook shows new source.
+
 ## Evaluation Log
 
 - 2026-03-26 — **Live demo script** — **Fail** (expected without operator auth): publish step fails with `FileNotFoundError` for `storage_state.json` until `notebooklm login`; Markdown export step succeeds first.
+- 2026-03-27 — **E2E pipeline (live)** — **Pass**: MCP extraction (7 threads, weekly) → Gemini briefing → NotebookLM Audio Overview (short, ~6 min) → MP3 downloaded (~20MB). Exit 0. Forum reply generated with topic table.
+- 2026-03-27 — **Pytest suite** — **Pass**: 44/44 tests pass in 0.35s; no network calls.
+- 2026-03-27 — **Forum post generation** — **Pass**: `write_forum_post()` produces separate `_forum_reply.md` file; filename collision bug fixed.
