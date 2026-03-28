@@ -1,0 +1,4 @@
+# Optional integrations (not installed by default).
+# NotebookLM: unofficial SDK — see FINDINGS.md and https://github.com/teng-lin/notebooklm-py
+# After install: playwright install chromium && notebooklm login
+notebooklm-py[browser]>=0.3.4

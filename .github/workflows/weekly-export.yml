@@ -1,0 +1,70 @@
+# Weekly NotebookLM source export (no secrets in repo).
+#
+# Secrets (examples):
+#   MCP_SERVER_COMMAND=npx
+#   MCP_EXTRACT_TOOL=discourse_list_top_topics
+#   MCP_EXTRACT_TOOL_ARGUMENTS={"period":"weekly","limit":10}
+#   GEMINI_API_KEY (optional — omit for --skip-briefing)
+#
+# MCP_SERVER_ARGS: if unset and MCP_SERVER_COMMAND is set, the workflow builds:
+#   ["-y","@nitansde/mcp@latest","--python_path","<repo>/.venv/bin/python"]
+# so Cloudflare deps from requirements.txt are used. Override via secret if needed.
+#
+# Or use EXTRACTION_FIXTURE_PATH (repo variable) or rely on fixtures/sample_extraction.json fallback.
+#
+# This workflow does NOT run run_pipeline.py --publish-notebooklm: notebooklm-py needs
+# interactive "notebooklm login" and stored browser session — use locally or self-hosted runners.
+
+name: weekly-export
+
+on:
+  schedule:
+    - cron: "15 6 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          MCP_SERVER_COMMAND: ${{ secrets.MCP_SERVER_COMMAND }}
+          MCP_SERVER_ARGS: ${{ secrets.MCP_SERVER_ARGS }}
+          MCP_EXTRACT_TOOL: ${{ secrets.MCP_EXTRACT_TOOL }}
+          MCP_EXTRACT_TOOL_ARGUMENTS: ${{ secrets.MCP_EXTRACT_TOOL_ARGUMENTS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          EXTRACTION_FIXTURE_PATH: ${{ vars.EXTRACTION_FIXTURE_PATH }}
+        run: |
+          PY="$(pwd)/.venv/bin/python"
+          if [ -z "$MCP_SERVER_COMMAND" ] && [ -z "$EXTRACTION_FIXTURE_PATH" ]; then
+            export EXTRACTION_FIXTURE_PATH="fixtures/sample_extraction.json"
+          fi
+          if [ -n "$MCP_SERVER_COMMAND" ] && [ -z "$MCP_SERVER_ARGS" ]; then
+            export MCP_SERVER_ARGS=$("$PY" -c "import json,os; print(json.dumps(['-y','@nitansde/mcp@latest','--python_path',os.path.abspath('$PY')]))")
+          fi
+          FLAGS="--dated --log-level INFO"
+          if [ -z "$GEMINI_API_KEY" ]; then
+            FLAGS="$FLAGS --skip-briefing"
+          fi
+          .venv/bin/python run_pipeline.py $FLAGS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notebooklm-weekly-md
+          path: exports/
+          if-no-files-found: warn

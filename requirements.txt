@@ -1,0 +1,10 @@
+# Python 3.10+ — pin versions when implementation stabilizes
+python-dotenv>=1.0.0
+google-generativeai>=0.8.0
+mcp>=1.2.0
+
+# Subprocess deps for @nitansde/mcp (Cloudflare bypass). Pass this venv’s python via:
+# MCP_SERVER_ARGS=["-y","@nitansde/mcp@latest","--python_path","/abs/path/to/.venv/bin/python"]
+cloudscraper>=1.6.0
+curl-cffi>=0.7.0
+brotli>=1.1.0
