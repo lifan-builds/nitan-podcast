@@ -154,9 +154,13 @@ def episode_reply_markdown(
     lines.append(f"# {SERIES_ZH} · {metadata['week_label']}")
     lines.append("")
 
-    # Audio link
+    # Audio link — if audio_url looks like an upload reference, use Discourse
+    # audio embed syntax; otherwise show a download link.
     if audio_url:
-        lines.append(f":headphones: **收听本期：** {audio_url}")
+        if audio_url.startswith("upload://"):
+            lines.append(f"![{SERIES_ZH}-{metadata['week_label']}|audio]({audio_url})")
+        else:
+            lines.append(f":headphones: **收听本期：** {audio_url}")
         lines.append("")
 
     # Topic table with links and stats
@@ -181,6 +185,10 @@ def episode_reply_markdown(
         lines.append("**其他平台：**")
         link_parts = [f"[{name}]({url})" for name, url in extra_links.items()]
         lines.append(" · ".join(link_parts))
+        lines.append("")
+
+    if not audio_url:
+        lines.append("> :point_up: 发帖时将 MP3 文件拖入编辑器即可生成内嵌播放器")
         lines.append("")
 
     lines.append("---")
