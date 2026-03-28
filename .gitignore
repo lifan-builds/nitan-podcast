@@ -7,3 +7,4 @@ exports/
 releases/
 demo/output/
 .DS_Store
+.claude/
