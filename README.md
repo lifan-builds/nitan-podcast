@@ -85,6 +85,14 @@ Tool names and parameters are **version-specific**; see [`FINDINGS.md`](FINDINGS
 4. Set **instructions** to require **简体中文**口播 (e.g. **双人讨论**、**口语化**、保留美卡梗如 5/24、史高、冥币).
 5. Generate **Audio Overview** and use the product UI to listen or export audio.
 
+## Subscribe
+
+| Platform | Link |
+| -------- | ---- |
+| **RSS** | `https://lifan-builds.github.io/nitan-podcast/feed.xml` |
+| **Apple Podcasts** | [Nitan Podcast](https://podcasts.apple.com/podcast/nitan-podcast/id1234567890) *(search "Nitan Podcast")* |
+| **美卡论坛** | [announcement thread](https://www.uscardforum.com/t/topic/494521) |
+
 ## Publication (美卡论坛 + GitHub Releases)
 
 **Primary channel:** 美卡论坛 — single announcement thread + weekly episode replies (Nitan MCP pattern).
@@ -101,10 +109,11 @@ python run_pipeline.py --skip-briefing --dated --generate-post --audio-url "http
 
 ### Weekly operator checklist
 
-1. Run pipeline with `--publish-notebooklm --generate-post --dated`
+1. Run pipeline with `--publish-notebooklm --generate-post --generate-rss --dated`
 2. Upload MP3 to GitHub Releases (`gh release create v2026-Www releases/weekly_meika_2026-Www.mp3`)
-3. Copy `exports/*_forum_reply.md` content as a reply to the [announcement thread](https://www.uscardforum.com/t/topic/TBD)
-4. Update audio URL in the reply if using GitHub Release link
+3. Commit updated `docs/feed.xml` and push (GitHub Pages auto-deploys the RSS feed)
+4. Copy `exports/*_forum_reply.md` content as a reply to the [announcement thread](https://www.uscardforum.com/t/topic/494521)
+5. Update audio URL in the reply if using GitHub Release link
 
 ## Cron example (weekly)
 

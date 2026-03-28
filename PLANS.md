@@ -93,7 +93,8 @@ flowchart LR
 - [x] (2026-03-27) **Forum post generated:** Announcement thread (`exports/nitan_podcast_announcement.md`) + episode reply (`exports/weekly_meika_2026-W13_forum_reply.md`) with topic table and GitHub Release download link.
 - [x] (2026-03-27) **SoundCloud integration:** `soundcloud_upload.py` created (OAuth 2.1 PKCE, upload, token refresh) but **blocked** — SoundCloud API app registration closed since ~2018. See `FINDINGS.md`.
 - [x] (2026-03-27) **Test suite:** 44 pytest tests in `tests/test_pipeline.py` — all pass, no network calls.
-- [ ] **Publication v2:** Choose specific managed host (Spotify for Podcasters / 小宇宙 / etc.); fill canonical feed URL / directory links; optional upload API automation.
+- [x] (2026-03-28) **RSS feed & Apple Podcasts:** `rss_feed.py` generates RSS 2.0 + iTunes namespace feed at `docs/feed.xml`; `--generate-rss` flag in pipeline; cover art at `assets/cover.png`; GitHub Pages enabled on `main/docs`; feed live at `https://lifan-builds.github.io/nitan-podcast/feed.xml`; Apple Podcasts listing published.
+- [ ] **Publication v2:** Submit to Spotify for Podcasters / 小宇宙 / other directories; optional upload API automation.
 - [ ] **Audio embedding:** Solve inline player on 美卡论坛 — options: manual SoundCloud web upload (free tier auto-embeds via Discourse onebox), ask forum admin to whitelist .mp3 uploads, or Spotify for Podcasters with admin iframe whitelist.
 - [x] (2026-03-26) **Execute:** **[notebooklm-py](https://github.com/teng-lin/notebooklm-py)** integration — [`notebooklm_audio.py`](notebooklm_audio.py), `run_pipeline.py --publish-notebooklm` / `--notebooklm-audio-out`, `releases/` + `.gitignore`, docs + `.env.example`; GHA remains export-only.
 - [ ] Optional / experimental: isolated DIY **Playwright** on NotebookLM UI — only if SDK is insufficient and team accepts brittleness / ToS risk (`FINDINGS.md`).
