@@ -79,6 +79,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Path for downloaded audio (default: releases/weekly_meika_YYYY-Www.mp3 if --dated else releases/weekly_meika_podcast.mp3)",
     )
     parser.add_argument(
+        "--publish-soundcloud",
+        action="store_true",
+        help="Upload MP3 to SoundCloud (requires soundcloud_upload.py login + SOUNDCLOUD_CLIENT_ID)",
+    )
+    parser.add_argument(
         "--generate-post",
         action="store_true",
         help="Generate a 美卡论坛 Discourse post (Markdown) alongside the export",
@@ -141,9 +146,7 @@ def main(argv: list[str] | None = None) -> int:
         path = export_for_notebooklm(body, export_dir=export_dir, filename=filename)
         log.info("Wrote NotebookLM source: %s", path)
 
-        if args.generate_post:
-            post_path = write_forum_post(path, audio_url=args.audio_url)
-            log.info("Wrote forum post: %s", post_path)
+        audio_path = None
 
         if args.publish_notebooklm:
             from notebooklm_audio import publish_weekly_audio
@@ -156,6 +159,24 @@ def main(argv: list[str] | None = None) -> int:
             log.info("Publishing to NotebookLM; audio output: %s", audio_path)
             publish_weekly_audio(path, audio_path)
             log.info("Downloaded Audio Overview: %s", audio_path)
+
+        # SoundCloud upload (after we have an MP3)
+        soundcloud_url = args.audio_url
+        if args.publish_soundcloud and audio_path and audio_path.is_file():
+            from publisher import _current_week_label
+            from soundcloud_upload import upload_episode
+
+            week_label = _current_week_label()
+            log.info("Uploading to SoundCloud...")
+            soundcloud_url = upload_episode(audio_path, week_label)
+            log.info("SoundCloud URL: %s", soundcloud_url)
+
+        # Forum post (uses SoundCloud URL if available)
+        if args.generate_post:
+            post_path = write_forum_post(path, audio_url=soundcloud_url)
+            log.info("Wrote forum post: %s", post_path)
+
+        if audio_path and audio_path.is_file():
             print(str(audio_path), file=sys.stdout)
         else:
             print(str(path), file=sys.stdout)
