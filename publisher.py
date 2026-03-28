@@ -20,15 +20,30 @@ SERIES_NAME = "Nitan Podcast"
 SERIES_ZH = "泥潭播客"
 TAGLINE = "你的每周美卡论坛精华AI播客"
 
+# RSS / Podcast distribution defaults (overridable via env vars)
+PODCAST_LINK = "https://lifan-builds.github.io/nitan-podcast/"
+PODCAST_DESCRIPTION = "每周精选美卡论坛（泥潭）热帖，AI 自动生成的中文播客。6-8 分钟听完一周精华。"
+PODCAST_LANGUAGE = "zh"
+PODCAST_CATEGORY = "Technology"
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _current_week_label() -> str:
+def current_week_label() -> str:
     """Return e.g. '2026年第13周'."""
     iso = date.today().isocalendar()
     return f"{iso.year}年第{iso.week}周"
+
+
+def episode_guid(week_label: str | None = None) -> str:
+    """Stable GUID for an episode, e.g. 'nitan-podcast-2026-W13'."""
+    label = week_label or current_week_label()
+    m = re.match(r"(\d{4})年第(\d+)周", label)
+    if m:
+        return f"nitan-podcast-{m.group(1)}-W{int(m.group(2)):02d}"
+    return f"nitan-podcast-{label}"
 
 
 def _extract_threads(markdown: str) -> list[dict[str, str]]:
@@ -63,7 +78,7 @@ def episode_metadata(
     week_label: str | None = None,
 ) -> dict[str, str]:
     """Return episode title and description (Chinese) derived from the export Markdown."""
-    label = week_label or _current_week_label()
+    label = week_label or current_week_label()
     title = f"【{SERIES_NAME}】{SERIES_ZH} · {label}"
 
     threads = _extract_threads(markdown)
@@ -195,22 +210,6 @@ def episode_reply_markdown(
     lines.append(f"*由 {SERIES_NAME} 自动生成 · {metadata['week_label']}*")
     lines.append("")
     return "\n".join(lines)
-
-
-# ---------------------------------------------------------------------------
-# Legacy / simple format (kept for --generate-post backward compat)
-# ---------------------------------------------------------------------------
-
-def forum_post_markdown(
-    metadata: dict[str, str],
-    *,
-    audio_url: str | None = None,
-    extra_links: dict[str, str] | None = None,
-) -> str:
-    """Generate a Discourse-ready Markdown post for 美卡论坛."""
-    return episode_reply_markdown(
-        metadata, audio_url=audio_url, extra_links=extra_links,
-    )
 
 
 # ---------------------------------------------------------------------------

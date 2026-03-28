@@ -7,4 +7,5 @@ exports/
 releases/
 demo/output/
 .DS_Store
+.pytest_cache/
 .claude/

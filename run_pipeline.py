@@ -91,7 +91,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--audio-url",
         default=None,
-        help="Podcast episode URL to embed in the forum post (used with --generate-post)",
+        help="Podcast episode URL to embed in the forum post and RSS feed",
+    )
+    parser.add_argument(
+        "--generate-rss",
+        action="store_true",
+        help="Generate/update podcast RSS feed (docs/feed.xml) for Apple Podcasts / Spotify / 小宇宙",
+    )
+    parser.add_argument(
+        "--rss-output",
+        type=Path,
+        default=None,
+        help="Path for RSS feed file (default: docs/feed.xml)",
+    )
+    parser.add_argument(
+        "--episode-duration",
+        default="00:06:00",
+        help="Episode duration as HH:MM:SS for RSS feed (default: 00:06:00)",
     )
     args = parser.parse_args(argv)
 
@@ -163,10 +179,10 @@ def main(argv: list[str] | None = None) -> int:
         # SoundCloud upload (after we have an MP3)
         soundcloud_url = args.audio_url
         if args.publish_soundcloud and audio_path and audio_path.is_file():
-            from publisher import _current_week_label
+            from publisher import current_week_label
             from soundcloud_upload import upload_episode
 
-            week_label = _current_week_label()
+            week_label = current_week_label()
             log.info("Uploading to SoundCloud...")
             soundcloud_url = upload_episode(audio_path, week_label)
             log.info("SoundCloud URL: %s", soundcloud_url)
@@ -175,6 +191,26 @@ def main(argv: list[str] | None = None) -> int:
         if args.generate_post:
             post_path = write_forum_post(path, audio_url=soundcloud_url)
             log.info("Wrote forum post: %s", post_path)
+
+        # RSS feed
+        if args.generate_rss:
+            from rss_feed import generate_rss_feed
+
+            rss_audio_url = soundcloud_url or args.audio_url
+            if not rss_audio_url:
+                iso = date.today().isocalendar()
+                rss_audio_url = (
+                    f"https://github.com/lifan-builds/nitan-podcast/releases/"
+                    f"download/v{iso.year}-W{iso.week:02d}/"
+                    f"weekly_meika_{iso.year}-W{iso.week:02d}.mp3"
+                )
+            feed_path = generate_rss_feed(
+                path,
+                args.rss_output,
+                audio_url=rss_audio_url,
+                duration=args.episode_duration,
+            )
+            log.info("Updated RSS feed: %s", feed_path)
 
         if audio_path and audio_path.is_file():
             print(str(audio_path), file=sys.stdout)

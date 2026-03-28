@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from pathlib import Path as PathType
+from pathlib import Path
 from typing import Any
 
 import anyio
@@ -81,7 +81,7 @@ def _load_fixture() -> list[dict[str, Any]] | None:
     path = os.environ.get(ENV_FIXTURE, "").strip()
     if not path:
         return None
-    p = PathType(path)
+    p = Path(path)
     if not p.is_file():
         raise FileNotFoundError(f"{ENV_FIXTURE}: not a file: {path}")
     data = json.loads(p.read_text(encoding="utf-8"))
