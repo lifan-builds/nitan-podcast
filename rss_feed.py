@@ -52,7 +52,7 @@ def _podcast_config() -> dict[str, str]:
         "language": PODCAST_LANGUAGE,
         "author": os.environ.get("PODCAST_AUTHOR", "").strip() or SERIES_NAME,
         "owner_name": os.environ.get("PODCAST_OWNER_NAME", "").strip() or SERIES_NAME,
-        "owner_email": os.environ.get("PODCAST_OWNER_EMAIL", "").strip() or "",
+        "owner_email": os.environ.get("PODCAST_OWNER_EMAIL", "").strip() or "lifan.builds@gmail.com",
         "cover_art_url": os.environ.get("PODCAST_COVER_ART_URL", "").strip()
             or "https://github.com/lifan-builds/nitan-podcast/raw/main/assets/cover.png",
         "feed_url": os.environ.get("PODCAST_FEED_URL", "").strip()

@@ -15,13 +15,14 @@
     <itunes:image href="https://github.com/lifan-builds/nitan-podcast/raw/main/assets/cover.png" />
     <itunes:owner>
       <itunes:name>Nitan Podcast</itunes:name>
+      <itunes:email>lifan.builds@gmail.com</itunes:email>
     </itunes:owner>
     <item>
       <title>【Nitan Podcast】泥潭播客 · 2026年第13周</title>
       <description>本期话题：
 - 示例：某酒店卡史高讨论
 - 示例：羊毛线报</description>
-      <pubDate>Sat, 28 Mar 2026 04:34:24 GMT</pubDate>
+      <pubDate>Sat, 28 Mar 2026 17:09:55 GMT</pubDate>
       <guid isPermaLink="false">nitan-podcast-2026-W13</guid>
       <enclosure url="https://github.com/lifan-builds/nitan-podcast/releases/download/v2026-W13/weekly_meika_2026-W13.mp3" length="20892616" type="audio/mpeg" />
       <itunes:duration>00:06:00</itunes:duration>
