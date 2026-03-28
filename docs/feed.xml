@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+  <channel>
+    <title>Nitan Podcast</title>
+    <link>https://lifan-builds.github.io/nitan-podcast/</link>
+    <description>每周精选美卡论坛（泥潭）热帖，AI 自动生成的中文播客。6-8 分钟听完一周精华。</description>
+    <language>zh</language>
+    <generator>nitan-pod RSS generator</generator>
+    <atom:link href="https://lifan-builds.github.io/nitan-podcast/feed.xml" rel="self" type="application/rss+xml" />
+    <itunes:author>Nitan Podcast</itunes:author>
+    <itunes:summary>每周精选美卡论坛（泥潭）热帖，AI 自动生成的中文播客。6-8 分钟听完一周精华。</itunes:summary>
+    <itunes:type>episodic</itunes:type>
+    <itunes:explicit>false</itunes:explicit>
+    <itunes:category>Technology</itunes:category>
+    <itunes:image href="https://github.com/lifan-builds/nitan-podcast/raw/main/assets/cover.png" />
+    <itunes:owner>
+      <itunes:name>Nitan Podcast</itunes:name>
+    </itunes:owner>
+    <item>
+      <title>【Nitan Podcast】泥潭播客 · 2026年第13周</title>
+      <description>本期话题：
+- 示例：某酒店卡史高讨论
+- 示例：羊毛线报</description>
+      <pubDate>Sat, 28 Mar 2026 04:34:24 GMT</pubDate>
+      <guid isPermaLink="false">nitan-podcast-2026-W13</guid>
+      <enclosure url="https://github.com/lifan-builds/nitan-podcast/releases/download/v2026-W13/weekly_meika_2026-W13.mp3" length="20892616" type="audio/mpeg" />
+      <itunes:duration>00:06:00</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+    </item>
+  </channel>
+</rss>

@@ -1,5 +1,7 @@
 # Nitan Podcast — 美卡论坛 (USCardForum) 每周AI播客
 
+**论坛帖：[【Nitan Podcast】你的每周美卡论坛精华播客](https://www.uscardforum.com/t/topic/494521)**
+
 **Google NotebookLM is the key solution for the podcast:** it turns weekly forum **sources** into **spoken audio** (e.g. **Audio Overview**). This repo is a **Python 3.10+** pipeline that **extracts key information** from [uscardforum.com](https://uscardforum.com) via [**Nitan MCP**](https://www.uscardforum.com/t/topic/450599) ([`@nitansde/mcp`](https://github.com/nitansde/nitan-mcp)), optionally refines it into Chinese **Markdown** with **Gemini**, and **exports** a file you add to NotebookLM as a **source**.
 
 ```mermaid
@@ -83,15 +85,26 @@ Tool names and parameters are **version-specific**; see [`FINDINGS.md`](FINDINGS
 4. Set **instructions** to require **简体中文**口播 (e.g. **双人讨论**、**口语化**、保留美卡梗如 5/24、史高、冥币).
 5. Generate **Audio Overview** and use the product UI to listen or export audio.
 
-## Publication checklist (after NotebookLM)
+## Publication (美卡论坛 + GitHub Releases)
 
-Hosting choice is **TBD**; use this as a weekly operator checklist:
+**Primary channel:** 美卡论坛 — single announcement thread + weekly episode replies (Nitan MCP pattern).
 
-1. **Audio** — Export/download the week’s Audio Overview from NotebookLM into a dated folder (e.g. `releases/2026-W12/meika_weekly.mp3`).
-2. **Metadata** — **简体中文** episode title (e.g. `美卡周刊 · 2026年第12周`) and show notes; reuse bullets from the exported Markdown if helpful.
-3. **Hosting** — Upload to your podcast host (or self-hosted storage + RSS).
-4. **RSS / feed** — Confirm the new episode appears in the feed; validate if you self-host.
-5. **Directories** — Note canonical listen links (Apple, Spotify, etc.) once submitted.
+```bash
+# Generate forum post alongside the weekly export
+python run_pipeline.py --skip-briefing --dated --publish-notebooklm --generate-post
+
+# With an audio URL (e.g. after uploading to GitHub Releases or SoundCloud)
+python run_pipeline.py --skip-briefing --dated --generate-post --audio-url "https://..."
+```
+
+**Current audio hosting:** [GitHub Releases](https://github.com/lifan-builds/nitan-podcast/releases) (download link in forum post). Inline audio player on the forum is blocked — see [`FINDINGS.md`](FINDINGS.md) for details and workaround options.
+
+### Weekly operator checklist
+
+1. Run pipeline with `--publish-notebooklm --generate-post --dated`
+2. Upload MP3 to GitHub Releases (`gh release create v2026-Www releases/weekly_meika_2026-Www.mp3`)
+3. Copy `exports/*_forum_reply.md` content as a reply to the [announcement thread](https://www.uscardforum.com/t/topic/TBD)
+4. Update audio URL in the reply if using GitHub Release link
 
 ## Cron example (weekly)
 
@@ -163,6 +176,9 @@ cp .env.example .env
 | `briefing_writer.py` | Optional Gemini → Markdown for NotebookLM |
 | `notebooklm_export.py` | Write UTF-8 export files |
 | `notebooklm_audio.py` | Optional **`notebooklm-py`**: upload MD, generate Audio Overview, download MP3 |
+| `publisher.py` | Episode metadata + 美卡论坛 Discourse post: announcement thread + weekly episode replies |
+| `soundcloud_upload.py` | SoundCloud OAuth 2.1 upload (**blocked** — API registration closed since ~2018) |
+| `tests/test_pipeline.py` | 44 pytest tests (offline, no network) |
 | `fixtures/sample_extraction.json` | Sample data for dry runs |
 | `scripts/run_live_demo.sh` | One-command live MCP → `demo/output/DEMO_notebooklm_weekly.md` → `--publish-notebooklm` → `releases/*.mp3` when auth/env OK |
 | `EVALUATION.md` | Verification contracts for pipeline and demo |

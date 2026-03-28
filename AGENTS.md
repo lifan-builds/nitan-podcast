@@ -23,14 +23,17 @@ Automation: **cron** / **GitHub Actions** for export is straightforward; **`--pu
 
 | Path | Role |
 | ---- | ---- |
-| `run_pipeline.py` | **CLI orchestrator**: `--publish-notebooklm`, `--notebooklm-audio-out`, `--dated`, `--skip-briefing`, `--list-mcp-tools`, `--generate-post`, `--audio-url` |
+| `run_pipeline.py` | **CLI orchestrator**: `--publish-notebooklm`, `--notebooklm-audio-out`, `--dated`, `--skip-briefing`, `--list-mcp-tools`, `--generate-post`, `--generate-rss`, `--audio-url` |
 | `extractor.py` | MCP stdio client; `MCP_*` env; `EXTRACTION_FIXTURE_PATH` for tests; `threads_to_source_markdown` |
 | `briefing_writer.py` | Optional Gemini: raw extraction → dense Chinese **Markdown** for NotebookLM |
 | `notebooklm_export.py` | Write UTF-8 `exports/*.md` |
 | `notebooklm_audio.py` | Optional **`notebooklm-py`**: `add_file` → `generate_audio` → `wait` → `download_audio` |
-| `publisher.py` | Episode metadata (中文 title, topic bullets) + 美卡论坛 Discourse post generator |
+| `publisher.py` | Episode metadata + 美卡论坛 Discourse post generator: announcement thread (Nitan MCP style) + weekly episode replies with topic table, stats, audio link |
+| `rss_feed.py` | Podcast RSS 2.0 feed generator with iTunes namespace; `--generate-rss` writes/upserts `docs/feed.xml` for Apple Podcasts / Spotify / 小宇宙 |
+| `soundcloud_upload.py` | SoundCloud OAuth 2.1 PKCE upload (created but **unusable** — SoundCloud API registration closed since ~2018; kept for future if access opens) |
 | `fixtures/sample_extraction.json` | Sample threads JSON for CI / local dry run |
-| `tests/test_pipeline.py` | pytest suite (44 tests): extractor, export, briefing, CLI args, integration smoke |
+| `tests/test_pipeline.py` | pytest suite: extractor, export, briefing, CLI args, integration smoke |
+| `tests/test_rss_feed.py` | pytest suite: RSS feed generation, upsert, iTunes tags, GUID derivation |
 | `scripts/run_live_demo.sh` | Live **`discourse_list_top_topics`** (weekly, limit 5) → `demo/output/DEMO_notebooklm_weekly.md` → **`--publish-notebooklm`** (needs `.env` **`NOTEBOOKLM_*`** + **`notebooklm login`**; not Chrome-only sign-in) |
 | `demo/README.md` | Demo runbook |
 | `.github/workflows/weekly-export.yml` | Scheduled workflow + artifact upload |
@@ -63,6 +66,14 @@ Automation: **cron** / **GitHub Actions** for export is straightforward; **`--pu
 | `NOTEBOOKLM_SOURCE_WAIT_TIMEOUT` | No | Source indexing wait (default 180) |
 | `NOTEBOOKLM_STORAGE_PATH` | No | Override `storage_state.json` path |
 | `NOTEBOOKLM_HTTP_TIMEOUT` | No | HTTP client timeout (default 60) |
+| `SOUNDCLOUD_CLIENT_ID` | If `--publish-soundcloud` | SoundCloud app credentials (API registration closed ~2018) |
+| `SOUNDCLOUD_CLIENT_SECRET` | If `--publish-soundcloud` | SoundCloud app secret |
+| `PODCAST_COVER_ART_URL` | No | Cover art URL (1400×1400+ JPEG/PNG) for RSS feed |
+| `PODCAST_AUTHOR` | No | iTunes author (default `Nitan Podcast`) |
+| `PODCAST_OWNER_NAME` / `PODCAST_OWNER_EMAIL` | No | iTunes owner contact |
+| `PODCAST_LINK` | No | Show website (default GitHub Pages URL) |
+| `PODCAST_FEED_URL` | No | Feed self-link URL |
+| `PODCAST_CATEGORY` | No | iTunes category (default `Technology`) |
 
 ## Development Workflow
 
@@ -90,3 +101,7 @@ Automation: **cron** / **GitHub Actions** for export is straightforward; **`--pu
 - **Weekly jobs** — `run_pipeline.py` is headless with non-zero exit on failure.
 - **Programmatic NotebookLM** — **`notebooklm-py`** behind `--publish-notebooklm`; unofficial API; pin `requirements-integrations.txt`.
 - **UI automation** — DIY Playwright non-core; see `FINDINGS.md`.
+- **Repo & GitHub** — [lifan-builds/nitan-podcast](https://github.com/lifan-builds/nitan-podcast); audio hosted via GitHub Releases (interim) until embeddable player solved.
+- **Publication pattern** — Nitan MCP–style single announcement thread on 美卡论坛 + weekly episode replies; `publisher.py` generates both.
+- **Podcast tuning** — `NOTEBOOKLM_AUDIO_LENGTH=short` + 7 threads + "点到为止" instructions → ~6 min episodes; see `notebooklm_audio.py` `_DEFAULT_INSTRUCTIONS`.
+- **Audio embedding on 美卡论坛** — Forum blocks MP3 upload (images only); SoundCloud API registration closed since ~2018; current workaround is GitHub Release download link. See `FINDINGS.md`.
