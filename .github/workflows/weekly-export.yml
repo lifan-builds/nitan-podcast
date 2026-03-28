@@ -39,10 +39,21 @@ jobs:
         working-directory: ${{ github.workspace }}
     env:
       PY: .venv/bin/python
+      DOTENV_SOURCE: /Users/lfan/Project/nitan-pod/.env
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Load .env from host
+        run: |
+          if [ -f "$DOTENV_SOURCE" ]; then
+            cp "$DOTENV_SOURCE" .env
+            echo "::notice::Loaded .env from $DOTENV_SOURCE"
+          else
+            echo "::error::.env not found at $DOTENV_SOURCE"
+            exit 1
+          fi
 
       - name: Compute ISO week
         id: week
@@ -62,9 +73,16 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Install / update dependencies
+      - name: Setup venv and install dependencies
         if: steps.check.outputs.skip != 'true'
-        run: $PY -m pip install -q -r requirements.txt
+        run: |
+          if [ ! -x .venv/bin/python ]; then
+            python3 -m venv .venv
+          fi
+          $PY -m pip install -q -r requirements.txt
+          if [ -f requirements-integrations.txt ]; then
+            $PY -m pip install -q -r requirements-integrations.txt
+          fi
 
       # --- Phase 1: Extract + Export (headless) ---
       - name: Extract and export Markdown
