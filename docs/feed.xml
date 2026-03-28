@@ -20,11 +20,16 @@
     <item>
       <title>【Nitan Podcast】泥潭播客 · 2026年第13周</title>
       <description>本期话题：
-- 示例：某酒店卡史高讨论
-- 示例：羊毛线报</description>
-      <pubDate>Sat, 28 Mar 2026 17:27:22 GMT</pubDate>
+- 泥潭应用商店（高赞工具集合帖）
+- 外婆都会出票 | 真的一键就可以的现金、积分票 AI 搜索
+- 美卡论坛官方AI助手上线
+- 纯新手教程：如何订去日本的里程票（转）
+- Vibe coding了一个Equinox 实体店购卡 DP 实时追踪地图
+- 日本北陆地区秋季美食旅
+- [C1S大赌场]一键抓取你的所有C1 shopping offer</description>
+      <pubDate>Sat, 28 Mar 2026 18:41:51 GMT</pubDate>
       <guid isPermaLink="false">nitan-podcast-2026-W13</guid>
-      <enclosure url="https://github.com/lifan-builds/nitan-podcast/releases/download/v2026-W13/weekly_meika_2026-W13_v4.mp3" length="10768793" type="audio/mpeg" />
+      <enclosure url="https://github.com/lifan-builds/nitan-podcast/releases/download/v2026-W13/weekly_meika_2026-W13.mp3" length="0" type="audio/mpeg" />
       <itunes:duration>00:06:00</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
     </item>
