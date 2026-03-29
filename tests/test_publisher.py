@@ -76,10 +76,11 @@ class TestEpisodeMetadata:
         assert SERIES_ZH in meta["title"]
         assert "2026年第13周" in meta["title"]
 
-    def test_description_has_bullets(self, sample_markdown: str):
+    def test_description_has_threads(self, sample_markdown: str):
         meta = episode_metadata(sample_markdown)
-        assert "本期话题" in meta["description"]
+        assert "本期精选" in meta["description"]
         assert "示例：某酒店卡史高讨论" in meta["description"]
+        assert "信用卡" in meta["description"]
 
     def test_threads_in_metadata(self, sample_markdown: str):
         meta = episode_metadata(sample_markdown)

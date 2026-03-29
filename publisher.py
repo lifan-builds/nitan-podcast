@@ -72,6 +72,46 @@ def _extract_thread_titles(markdown: str) -> list[str]:
 # Episode metadata
 # ---------------------------------------------------------------------------
 
+def _format_description(threads: list[dict[str, str]], label: str) -> str:
+    """Build a rich show-note description from thread metadata."""
+    if not threads:
+        return f"{SERIES_ZH} {label} 精选话题"
+
+    lines: list[str] = []
+
+    # Group threads by category
+    by_cat: dict[str, list[dict[str, str]]] = {}
+    for t in threads:
+        cat = t.get("category", "其他")
+        by_cat.setdefault(cat, []).append(t)
+
+    # Summary line
+    cats = " / ".join(by_cat.keys())
+    total_views = sum(int(t.get("views", 0)) for t in threads)
+    lines.append(f"本期精选 {len(threads)} 个热帖，涵盖{cats}。")
+    if total_views > 0:
+        lines.append(f"本周合计 {total_views:,} 次浏览。")
+    lines.append("")
+
+    # Threads grouped by category with stats
+    for cat, cat_threads in by_cat.items():
+        lines.append(f"【{cat}】")
+        for t in cat_threads:
+            title = t.get("title", "—")
+            likes = t.get("like_count", "")
+            views = t.get("views", "")
+            stat_parts = []
+            if likes:
+                stat_parts.append(f"❤️{likes}")
+            if views:
+                stat_parts.append(f"👀{views}")
+            stat = " ".join(stat_parts)
+            lines.append(f"• {title}" + (f"  ({stat})" if stat else ""))
+        lines.append("")
+
+    return "\n".join(lines).strip()
+
+
 def episode_metadata(
     markdown: str,
     *,
@@ -87,12 +127,7 @@ def episode_metadata(
 
     if threads is None:
         threads = _extract_threads(markdown)
-    titles = [t.get("title", "") for t in threads if t.get("title")]
-    if titles:
-        bullets = "\n".join(f"- {t}" for t in titles)
-        description = f"本期话题：\n{bullets}"
-    else:
-        description = f"{SERIES_ZH} {label} 精选话题"
+    description = _format_description(threads, label)
 
     return {
         "title": title,
