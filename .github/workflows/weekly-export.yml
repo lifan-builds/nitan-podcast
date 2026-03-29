@@ -172,6 +172,12 @@ jobs:
             git push
           fi
 
+      # --- Phase 6: Validate live feed ---
+      - name: Validate live feed
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          $PY scripts/validate_feed.py --wait-for-deploy 120
+
       # --- Artifacts ---
       - name: Upload exports
         if: steps.check.outputs.skip != 'true'
