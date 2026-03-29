@@ -205,8 +205,7 @@ def main(argv: list[str] | None = None) -> int:
             if not rss_audio_url:
                 iso = date.today().isocalendar()
                 rss_audio_url = (
-                    f"https://github.com/lifan-builds/nitan-podcast/releases/"
-                    f"download/v{iso.year}-W{iso.week:02d}/"
+                    f"https://lifan-builds.github.io/nitan-podcast/episodes/"
                     f"weekly_meika_{iso.year}-W{iso.week:02d}.mp3"
                 )
             rss_mp3 = args.mp3_path or audio_path

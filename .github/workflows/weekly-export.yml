@@ -127,14 +127,21 @@ jobs:
           ISO_WEEK="${{ steps.week.outputs.iso_week }}"
           MP3="${{ steps.audio.outputs.mp3_path }}"
 
+          PAGES_MP3="docs/episodes/weekly_meika_${ISO_WEEK}.mp3"
+          PAGES_URL="https://lifan-builds.github.io/nitan-podcast/episodes/weekly_meika_${ISO_WEEK}.mp3"
+
           if [ -n "${{ inputs.audio_url }}" ]; then
             AUDIO_URL="${{ inputs.audio_url }}"
           elif [ -n "$MP3" ] && [ -f "$MP3" ]; then
+            # Copy to docs/episodes for GitHub Pages hosting (correct audio/mpeg content-type)
+            mkdir -p docs/episodes
+            cp "$MP3" "$PAGES_MP3"
+            AUDIO_URL="$PAGES_URL"
+            # Also upload to GitHub Release as backup
             gh release create "$TAG" "$MP3" \
               --title "泥潭播客 · ${ISO_WEEK}" \
               --notes "RSS: https://lifan-builds.github.io/nitan-podcast/feed.xml" \
               2>/dev/null || true
-            AUDIO_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/$(basename "$MP3")"
           fi
           echo "audio_url=${AUDIO_URL:-}" >> $GITHUB_OUTPUT
 
@@ -159,9 +166,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/feed.xml
+          git add docs/feed.xml docs/episodes/
           if ! git diff --cached --quiet; then
-            git commit -m "chore: update RSS feed ${{ steps.week.outputs.iso_week }}"
+            git commit -m "chore: publish episode ${{ steps.week.outputs.iso_week }}"
             git push
           fi
 

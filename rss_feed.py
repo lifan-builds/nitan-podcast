@@ -163,15 +163,21 @@ def _find_item_guid(item: ET.Element) -> str | None:
 # Main entry point
 # ---------------------------------------------------------------------------
 
+PAGES_AUDIO_BASE = "https://lifan-builds.github.io/nitan-podcast/episodes"
+EPISODES_DIR = Path("docs/episodes")
+
+
 def _detect_file_size(audio_url: str, mp3_path: Path | None = None) -> int:
     """Best-effort MP3 file size detection: explicit path > URL-derived local > 0."""
     if mp3_path and Path(mp3_path).is_file():
         return Path(mp3_path).stat().st_size
     url_match = re.search(r"[\w-]+\.mp3", audio_url)
     if url_match:
-        local = Path("releases") / url_match.group(0)
-        if local.is_file():
-            return local.stat().st_size
+        # Check docs/episodes first (Pages hosting), then releases/
+        for search_dir in (EPISODES_DIR, Path("releases")):
+            local = search_dir / url_match.group(0)
+            if local.is_file():
+                return local.stat().st_size
     return 0
 
 

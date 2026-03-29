@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 .env
 *.mp3
+!docs/episodes/*.mp3
 exports/
 releases/
 demo/output/
