@@ -40,9 +40,16 @@ Objective grading criteria and verification contracts for work tracked in [`PLAN
 - **Verification Method:** `.env` configured with MCP + NotebookLM; `python run_pipeline.py --skip-briefing --dated --publish-notebooklm --generate-post`
 - **Acceptance Threshold:** Exit 0; MP3 at `releases/weekly_meika_YYYY-Www.mp3` (~5-8 min); forum reply at `exports/`; NotebookLM notebook shows new source.
 
+### RSS feed playback
+
+- **Verification Method:** Fetch `https://lifan-builds.github.io/nitan-podcast/feed.xml`; check `<enclosure>` has `length > 0` and valid URL.
+- **Acceptance Threshold:** Apple Podcasts / other players can stream the episode. Enclosure length must reflect actual MP3 file size.
+
 ## Evaluation Log
 
 - 2026-03-26 — **Live demo script** — **Fail** (expected without operator auth): publish step fails with `FileNotFoundError` for `storage_state.json` until `notebooklm login`; Markdown export step succeeds first.
 - 2026-03-27 — **E2E pipeline (live)** — **Pass**: MCP extraction (7 threads, weekly) → Gemini briefing → NotebookLM Audio Overview (short, ~6 min) → MP3 downloaded (~20MB). Exit 0. Forum reply generated with topic table.
 - 2026-03-27 — **Pytest suite** — **Pass**: 44/44 tests pass in 0.35s; no network calls.
 - 2026-03-27 — **Forum post generation** — **Pass**: `write_forum_post()` produces separate `_forum_reply.md` file; filename collision bug fixed.
+- 2026-03-28 — **Pytest suite** — **Pass**: 91/91 tests pass in 0.35s (added publisher tests + conftest + --markdown-input test).
+- 2026-03-28 — **RSS feed playback** — **Fail → Fix**: `enclosure length="0"` broke Apple Podcasts. Fixed: correct URL + `length="10768793"`. Verified live feed has correct values.

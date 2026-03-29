@@ -96,11 +96,18 @@ flowchart LR
 - [x] (2026-03-26) **Execute:** **[notebooklm-py](https://github.com/teng-lin/notebooklm-py)** integration — [`notebooklm_audio.py`](notebooklm_audio.py), `run_pipeline.py --publish-notebooklm` / `--notebooklm-audio-out`, `releases/` + `.gitignore`, docs + `.env.example`; GHA remains export-only.
 - [x] (2026-03-28) **Self-hosted runner:** `nitan-mac` runner online; weekly workflow verified (last run succeeded). Workflow: MCP → Gemini → NotebookLM → GitHub Release → RSS → push.
 - [x] (2026-03-28) **Code cleanup:** Removed dead `soundcloud_upload.py` + `--publish-soundcloud`; pinned dependency versions; added `pyproject.toml` (eliminates `sys.path` hacks in tests); extracted duplicated logic in `extractor.py`; fixed test bugs.
+- [x] (2026-03-28) **Gemini SDK migration:** `briefing_writer.py` migrated from deprecated `google-generativeai` to `google-genai`; requirements.txt updated.
+- [x] (2026-03-28) **Workflow efficiency:** Added `--markdown-input` flag — GHA Phases 2 & 4 reuse Phase 1 export (3 MCP calls → 1). Structured threads passed through pipeline to skip regex re-parsing. DOTENV_SOURCE changed to portable `~/.nitan-podcast/.env`.
+- [x] (2026-03-28) **Publisher tests:** 27 new tests in `tests/test_publisher.py`; shared fixtures in `tests/conftest.py`. Total: 91 tests.
+- [x] (2026-03-28) **RSS fix:** `feed.xml` had `length="0"` in enclosure (broke Apple Podcasts playback). Fixed with correct file size + URL. Added `--mp3-path` flag, `_detect_file_size()` helper, and warning on zero size.
 
 ## Surprises & Discoveries
 
 - Observation: `google.generativeai` package emits a **FutureWarning** recommending `google.genai`.
-  Evidence: local run logs when briefing path is used; logged in `FINDINGS.md`.
+  Evidence: local run logs when briefing path is used. **Resolved:** migrated to `google-genai` on 2026-03-28.
+
+- Observation: RSS `<enclosure length="0">` causes Apple Podcasts to refuse playback. The file size detection silently fell back to 0 when the local MP3 wasn't present at RSS generation time.
+  Evidence: user reports 2026-03-28; confirmed by inspecting `docs/feed.xml`.
 
 - Observation: Operators may assume **signed-in Chrome** satisfies NotebookLM automation; **`notebooklm-py`** only uses Playwright **`notebooklm login`** → **`storage_state.json`**.
   Evidence: `FileNotFoundError` for `~/.notebooklm/storage_state.json` when running `--publish-notebooklm` without CLI login; logged in `FINDINGS.md` Error Log.
