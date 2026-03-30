@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -18,7 +19,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from briefing_writer import write_briefing_markdown
-from extractor import extract_weekly_key_info, list_mcp_tools, threads_to_source_markdown
+from extractor import (
+    extract_weekly_key_info,
+    fetch_thread_details,
+    list_mcp_tools,
+    select_threads,
+    threads_to_source_markdown,
+)
 from notebooklm_export import DEFAULT_EXPORT_DIR, DEFAULT_MARKDOWN_NAME, export_for_notebooklm
 from publisher import write_forum_post
 
@@ -66,6 +73,11 @@ def main(argv: list[str] | None = None) -> int:
         "--list-mcp-tools",
         action="store_true",
         help="Connect to MCP server, print tool names/schemas as JSON, exit",
+    )
+    parser.add_argument(
+        "--skip-details",
+        action="store_true",
+        help="Skip fetching thread replies/details (faster, uses only OP-level data)",
     )
     parser.add_argument(
         "--markdown-input",
@@ -168,6 +180,15 @@ def main(argv: list[str] | None = None) -> int:
                 log.error("Extraction returned no threads")
                 return 1
 
+            # Select diverse threads if we got more than needed
+            if len(threads) > 7:
+                threads = select_threads(threads)
+                log.info("Selected %d threads after scoring", len(threads))
+
+            if not args.skip_details:
+                log.info("Fetching thread details (replies) for %d threads", len(threads))
+                threads = fetch_thread_details(threads)
+
             raw_md = threads_to_source_markdown(threads)
 
             if args.skip_briefing:
@@ -194,7 +215,16 @@ def main(argv: list[str] | None = None) -> int:
             log.info("Downloaded Audio Overview: %s", audio_path)
 
         if args.generate_post:
-            post_path = write_forum_post(path, audio_url=args.audio_url, threads=threads)
+            platform_links = None
+            raw_links = os.environ.get("PODCAST_PLATFORM_LINKS", "").strip()
+            if raw_links:
+                try:
+                    platform_links = json.loads(raw_links)
+                except json.JSONDecodeError:
+                    log.warning("PODCAST_PLATFORM_LINKS is not valid JSON; ignoring")
+            post_path = write_forum_post(
+                path, audio_url=args.audio_url, extra_links=platform_links, threads=threads,
+            )
             log.info("Wrote forum post: %s", post_path)
 
         # RSS feed

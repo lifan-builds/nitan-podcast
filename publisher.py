@@ -79,6 +79,13 @@ def _format_description(threads: list[dict[str, str]], label: str) -> str:
 
     lines: list[str] = []
 
+    # Highlights teaser — pick top 2-3 threads by engagement for hooks
+    top_hooks = sorted(threads, key=lambda t: int(t.get("like_count", 0)), reverse=True)[:3]
+    hook_titles = [t.get("title", "")[:20] for t in top_hooks if t.get("title")]
+    if hook_titles:
+        lines.append(f"本期看点：{'、'.join(hook_titles)}……")
+        lines.append("")
+
     # Group threads by category
     by_cat: dict[str, list[dict[str, str]]] = {}
     for t in threads:
@@ -100,13 +107,21 @@ def _format_description(threads: list[dict[str, str]], label: str) -> str:
             title = t.get("title", "—")
             likes = t.get("like_count", "")
             views = t.get("views", "")
+            posts_count = t.get("posts_count", t.get("reply_count", ""))
             stat_parts = []
             if likes:
                 stat_parts.append(f"❤️{likes}")
             if views:
                 stat_parts.append(f"👀{views}")
+            if posts_count:
+                stat_parts.append(f"💬{posts_count}")
             stat = " ".join(stat_parts)
             lines.append(f"• {title}" + (f"  ({stat})" if stat else ""))
+            # Add teaser from OP content if available
+            op = t.get("op_content", t.get("op_summary", ""))
+            if op:
+                teaser = op[:60].rstrip() + ("…" if len(op) > 60 else "")
+                lines.append(f"  └ {teaser}")
         lines.append("")
 
     return "\n".join(lines).strip()

@@ -78,6 +78,15 @@ class TestBuildChannel:
         ns = {"itunes": ITUNES_NS}
         assert channel.find("itunes:type", ns).text == "episodic"
 
+    def test_category_uses_text_attribute(self):
+        """Spotify requires <itunes:category text='X'/>, not <itunes:category>X</itunes:category>."""
+        config = _podcast_config()
+        _, channel = _build_channel(config)
+        ns = {"itunes": ITUNES_NS}
+        cat = channel.find("itunes:category", ns)
+        assert cat.get("text") == config["category"]
+        assert cat.text is None
+
 
 # ---------------------------------------------------------------------------
 # _build_item

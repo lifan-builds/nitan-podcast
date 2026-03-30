@@ -2,82 +2,94 @@
 
 Research results, discoveries, and external content collected during project work.
 
-> **Security note:** External content (web searches, API responses, copied docs) goes here — never directly into `PLANS.md`. This separation prevents untrusted content from polluting the trusted execution plan.
+> **Security note:** External content goes here — never directly into PLANS.md.
 
-## Research & References
+## Key Discoveries
 
-### NotebookLM as the product audio engine (project stance)
+### NotebookLM podcast length tuning
 
-The stack is **NotebookLM-first**: Python prepares **sources**; **Audio Overview** (or similar) in **Google NotebookLM** is the **key solution** for the weekly **Chinese podcast**. There is **no reliance** on a public NotebookLM API for the supported workflow.
+| Version | `AUDIO_LENGTH` | Threads | Result |
+|---------|---------------|---------|--------|
+| v1 | default | 10 | ~15 min (too long) |
+| v2 | short | 10 | ~4 min (too short) |
+| v3 | default | 10 | ~20 min (text instruction "6-8分钟" ignored) |
+| v4 ✓ | short | 7 | ~6 min (approved) |
 
-### Official API
+**Takeaway:** `NOTEBOOKLM_AUDIO_LENGTH` and thread count are the only effective levers. Text instructions have no measurable effect on duration.
 
-**Google NotebookLM** does not expose a documented **public API** for programmatic source upload or **Audio Overview** export (as of research captured here). The **supported** integration is: generate **UTF-8 Markdown** on disk → user **uploads** in the NotebookLM UI → generates audio there. Revisit if Google publishes an official API.
+### GitHub Releases content-type (2026-03-28)
 
-### Third-party GitHub integrations (research, 2026-03)
+All GitHub Release assets are served as `application/octet-stream` regardless of extension. Apple Podcasts requires `audio/mpeg` and rejects playback otherwise. **Resolution:** Host MP3s via GitHub Pages (`docs/episodes/`), which infers MIME types from file extensions.
 
-There is still **no official Google NotebookLM API**. Community projects fall into **(A) reverse-engineered / internal RPC clients**, **(B) MCP servers wrapping NotebookLM**, **(C) Playwright-style browser automation**, and **(D) alternatives that replace NotebookLM’s podcast feature**.
+### Gemini SDK migration (2026-03-28)
 
-| Project | Stars (approx.) | Role | Notes |
-| ------- | ----------------- | ---- | ----- |
-| [**teng-lin/notebooklm-py**](https://github.com/teng-lin/notebooklm-py) | ~7.5k | **Unofficial Python SDK + CLI** ([PyPI `notebooklm-py`](https://pypi.org/project/notebooklm-py/)) | Uses **undocumented Google APIs**; notebooks, **sources** (URL/file/Markdown), **Audio Overview** generation (**formats / lengths / languages**), **wait + download MP3/MP4**, plus video/slides/quiz/etc. Optional **`pip install "notebooklm-py[browser]"`** + **`playwright install chromium`** for **`notebooklm login`**. **Strongest fit** to chain after `export_for_notebooklm`: add file → `generate_audio` with **中文** instructions → download. **Risks:** APIs can break anytime; not Google-affiliated; credentials stored locally — see repo [Security](https://github.com/teng-lin/notebooklm-py/blob/main/SECURITY.md) and [Troubleshooting](https://github.com/teng-lin/notebooklm-py/blob/main/docs/troubleshooting.md). |
-| [**PleasePrompto/notebooklm-skill**](https://github.com/PleasePrompto/notebooklm-skill) | ~5k | **Claude Code skill** | Browser automation, persistent auth, Q&A over notebooks — agent-centric vs a small automated weekly job. |
-| [**khengyun/notebooklm-mcp**](https://github.com/khengyun/notebooklm-mcp) | ~80 | **MCP server** for NotebookLM | Exposes NotebookLM to MCP clients; compare if you want **NotebookLM-as-tool** vs direct Python. |
-| [**DataNath/notebooklm_source_automation**](https://github.com/DataNath/notebooklm_source_automation) | ~50 | **Playwright** source upload | Focused on adding **web** sources in bulk, not the full generate-audio pipeline. |
-| [**Pantheon-Security/notebooklm-mcp-secure**](https://github.com/Pantheon-Security/notebooklm-mcp-secure) | ~40 | Hardened **MCP** | Security-hardened MCP wrapper pattern. |
-| [**proyecto26/notebooklm-ai-plugin**](https://github.com/proyecto26/notebooklm-ai-plugin) | smaller | Agent plugin | Mentions slides/audio; verify vs `notebooklm-py` maturity. |
-| [**omril321/automated-notebooklm**](https://github.com/omril321/automated-notebooklm) | smaller | Automation + integrations | e.g. external boards — different shape than weekly export. |
-| [**souzatharsis/podcastfy**](https://github.com/souzatharsis/podcastfy) | ~6k | **OSS “podcast from content”** | Alternative to NotebookLM **audio** — not an integration with Google. |
+`google-generativeai` is deprecated (emits FutureWarning). Migrated to `google-genai`: `genai.Client(api_key=...).models.generate_content()`.
 
-**Recommendation for nitan-pod:** Prefer **[notebooklm-py](https://github.com/teng-lin/notebooklm-py)** for **programmatic** upload + **Audio Overview** + **download** in one Python-friendly package. Wire as an **optional** post-step to `run_pipeline.py` via **`--publish-notebooklm`** (and **`scripts/run_live_demo.sh`**) after **`notebooklm login`** (**interactive**; **CI** usually needs a different credential story or **local-only** runs).
+### discourse_read_topic response format (2026-03-29)
 
-**Implementation (nitan-pod):** [`notebooklm_audio.py`](notebooklm_audio.py) + `run_pipeline.py --publish-notebooklm`; optional deps in [`requirements-integrations.txt`](requirements-integrations.txt). Language default **`zh`**; generation uses **only** the newly uploaded source id.
+The `discourse_read_topic` MCP tool returns **plain text**, not structured JSON. Format:
+```
+# Thread Title
+Category ID N
 
-### Unofficial Path — DIY Playwright on the NotebookLM web UI
+- Post #1 by @username (YYYY-MM-DD HH:MM)
+  Post content here...
+- Post #2 by @another_user (YYYY-MM-DD HH:MM)
+  Reply content...
 
-Possible but **more brittle** than **`notebooklm-py`** unless you need something the SDK lacks. **Cons:** DOM churn, session/login, ToS ambiguity.
+Link: https://www.uscardforum.com/t/topic/NNNNN
+```
+Image uploads appear as `![alt|dims](upload://...)`. Required a custom `_parse_topic_text()` parser.
 
-This remains **optional** per [`PLANS.md`](PLANS.md) unless we explicitly adopt an SDK or MCP wrapper.
+### Nitan MCP available tools (2026-03-29)
 
-### Nitan MCP (USCardForum / 泥潭)
+| Tool | Purpose | Key params |
+|------|---------|------------|
+| `discourse_list_top_topics` | Weekly/daily top threads | `period`, `limit` (max 50) |
+| `discourse_read_topic` | Full thread with posts | `topic_id`, `post_limit` (max 500) |
+| `discourse_search` | Search with filters | `query`, `category`, `order`, `after`/`before` |
+| `discourse_list_hot_topics` | Currently trending | `limit` |
+| `discourse_list_excellent_topics` | Posts with 50+ likes | `limit` |
+| `discourse_list_funny_topics` | "难绷" badge posts | `limit` |
 
-Official announcement and setup guide (美卡论坛): [**【Nitan MCP】你的专属泥潭AI助手**](https://www.uscardforum.com/t/topic/450599). Project site: [nitan.ai/mcp](https://nitan.ai/mcp). Source: [**github.com/nitansde/nitan-mcp**](https://github.com/nitansde/nitan-mcp) (`MCP client and Skill for US Card Forum`).
+### Forum user feedback on W13 episode (2026-03-29)
 
-**Typical stdio launch (matches Claude Desktop / thread examples):**
+Key actionable feedback from [announcement thread](https://www.uscardforum.com/t/topic/494521):
+- Request for transcript + timestamps (Wechat)
+- Request for daily cadence (Hali: "一周感觉黄花菜都凉了")
+- Multiple requests for specific sub-forum coverage
+- 儿化音 pronunciation issue noted (aqua)
 
-- Command: `npx`
-- Args: `["-y", "@nitansde/mcp@latest"]` (pin a version in production if you prefer, e.g. `@nitansde/mcp@x.y.z`)
-- **Important for this repo:** append **`--python_path`** pointing at **`nitan-pod/.venv/bin/python`** after `pip install -r requirements.txt`. Nitan MCP shells out to Python for **cloudscraper** / **curl_cffi**; without a venv that has those packages, startup can hit **403 / Cloudflare** or “Python script produced no output” (see forum [FAQ](https://www.uscardforum.com/t/topic/450599)).
+User (project owner) decided to prioritize: Spotify distribution + content quality over frequency/transcripts.
 
-**Server environment (passed through to the MCP process — also set in your `.env` for `run_pipeline.py`):**
+### Spotify podcast submission (2026-03-29)
 
-- `NITAN_USERNAME` / `NITAN_PASSWORD` — forum login; thread notes many features need login and **2FA should be disabled** on the forum account for this flow.
-- `TIME_ZONE` or `TIMEZONE` — e.g. `America/Los_Angeles`, `Asia/Shanghai` (thread mentions both naming; follow current package README if unsure).
+- Portal: `creators.spotify.com` (not `podcasters.spotify.com` — old URL redirects)
+- Show URL: `https://open.spotify.com/show/3jjd0ozToYgW7yje7mfYCg`
+- RSS `<itunes:category>` must use `text` attribute format: `<itunes:category text="Technology" />` (not element text content)
 
-**Tools (names evolve with releases — always run `python run_pipeline.py --list-mcp-tools`):** release notes in the thread mention Discourse-oriented tools such as **`discourse_search`** (filters: category, author, `after`/`before`, sort), **`discourse_list_top_topics`**, **`discourse_list_hot_topics`**, **`discourse_read_topic`**, notifications / user activity tools, etc. For a **weekly digest**, a good starting point is often **`discourse_list_hot_topics`** or **`discourse_list_top_topics`** with the appropriate **period** parameter as defined by the live tool schema — then optionally **`discourse_read_topic`** per `topic_id` for bodies/replies. Exact JSON for `MCP_EXTRACT_TOOL_ARGUMENTS` depends on the tool schema your server exposes.
+### Apple Podcasts link (2026-03-29)
 
-**Operational caveats (from thread):** Cloudflare / CSRF issues can affect login or automation; `curl_cffi` / browser paths may be required on some hosts; rate limits and 403 if unauthenticated or too aggressive.
+- Correct URL: `https://podcasts.apple.com/us/podcast/nitan-podcast/id1888784962`
 
-## Discoveries
+## Nitan MCP Reference
 
-- **`google.genai` migration (done):** Migrated from deprecated `google-generativeai` to `google-genai` SDK. The old package logged FutureWarnings; the new SDK uses `genai.Client(api_key=...)` with `client.models.generate_content()`.
+- Announcement: [美卡论坛帖](https://www.uscardforum.com/t/topic/450599) · [nitan.ai/mcp](https://nitan.ai/mcp) · [GitHub](https://github.com/nitansde/nitan-mcp)
+- Launch: `npx -y @nitansde/mcp@latest --python_path /path/to/.venv/bin/python`
+- Needs `NITAN_USERNAME`/`NITAN_PASSWORD` (2FA off); `requirements.txt` includes cloudscraper/curl-cffi for Cloudflare bypass
+- Tool names are version-specific — always verify with `run_pipeline.py --list-mcp-tools`
 
-- **NotebookLM GitHub landscape (2026-03):** GitHub API `search/repositories?q=notebooklm` surfaces **`teng-lin/notebooklm-py`** as the highest-star project with explicit **Audio Overview** + **download** docs; **`PleasePrompto/notebooklm-skill`** and several **`notebooklm-mcp`** repos target agents/MCP rather than a minimal weekly pipeline. Star counts drift over time — re-check before adopting.
+## NotebookLM Integration
 
-### NotebookLM podcast length tuning (4 iterations)
-
-| Version | `AUDIO_LENGTH` | Threads | Instructions | Result |
-|---------|---------------|---------|--------------|--------|
-| v1 | default | 10 | basic 中文 | ~15 min (too long) |
-| v2 | short | 10 | basic 中文 | ~4 min (too short) |
-| v3 | default | 10 | + "6-8分钟" constraint | ~20 min (instruction ignored) |
-| v4 ✓ | short | 7 | fast pace, keyword hooks, "点到为止" | ~6 min (approved) |
-
-**Key finding:** `NOTEBOOKLM_AUDIO_LENGTH` and thread count are the effective levers. Text instructions requesting a specific duration have no measurable effect.
+- **No official Google API** for upload/audio export. Community SDK: [notebooklm-py](https://github.com/teng-lin/notebooklm-py) (~7.5k stars, 2026-03).
+- Auth: `notebooklm login` (Playwright) → `~/.notebooklm/storage_state.json`. Not the same as Chrome Google sign-in.
+- DIY Playwright is more brittle; `notebooklm-py` preferred.
 
 ## Error Log
 
 | Error | Context | Resolution | Date |
-| ----- | ------- | ---------- | ---- |
-| `FileNotFoundError: Storage file not found: ~/.notebooklm/storage_state.json` — *Run 'notebooklm login' to authenticate first.* | `run_pipeline.py --publish-notebooklm` or `./scripts/run_live_demo.sh` without prior CLI auth | Run **`notebooklm login`** once (Playwright browser); ensure **`pip install -r requirements-integrations.txt`** and **`playwright install chromium`** if needed. **Not** satisfied by Google sign-in only in regular Chrome. | 2026-03-26 |
-| `write_forum_post()` overwrites NotebookLM source | `stem.replace("notebooklm", "forum_post")` didn't match dated filenames like `weekly_meika_2026-W13.md` | Fixed: check if "notebooklm" is in stem; if not, append `_forum_post` suffix. | 2026-03-27 |
+|-------|---------|------------|------|
+| `FileNotFoundError: storage_state.json` | `--publish-notebooklm` without `notebooklm login` | Run `notebooklm login` once | 2026-03-26 |
+| `write_forum_post()` overwrites source | Stem replace missed dated filenames | Append `_forum_post` suffix | 2026-03-27 |
+| Apple Podcasts "can't be played" | Releases → `application/octet-stream` | Moved to GitHub Pages `docs/episodes/` | 2026-03-28 |
+| RSS `enclosure length="0"` | MP3 not local at RSS generation time | Added `--mp3-path` + `_detect_file_size()` | 2026-03-28 |

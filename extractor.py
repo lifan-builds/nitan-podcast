@@ -29,6 +29,9 @@ ENV_TOOL = "MCP_EXTRACT_TOOL"
 ENV_TOOL_ARGS = "MCP_EXTRACT_TOOL_ARGUMENTS"
 ENV_SERVER_ENV = "MCP_SERVER_ENV_JSON"
 ENV_FIXTURE = "EXTRACTION_FIXTURE_PATH"
+ENV_DETAIL_TOOL = "MCP_DETAIL_TOOL"
+DEFAULT_DETAIL_TOOL = "discourse_read_topic"
+DETAIL_POST_LIMIT = 20  # fetch up to 20 posts per thread (OP + top replies)
 
 
 def _parse_json_list(raw: str | None) -> list[str]:
@@ -162,20 +165,249 @@ def extract_weekly_key_info() -> list[dict[str, Any]]:
     return anyio.run(extract_weekly_key_info_async)
 
 
+# ---------------------------------------------------------------------------
+# Thread detail fetching (replies / comments)
+# ---------------------------------------------------------------------------
+
+def _extract_topic_id(thread: dict[str, Any]) -> int | None:
+    """Try to extract topic_id from thread dict (id field or URL)."""
+    if "id" in thread:
+        try:
+            return int(thread["id"])
+        except (ValueError, TypeError):
+            pass
+    url = thread.get("url", "")
+    # Pattern: /t/topic/493110 or /t/slug/493110
+    import re
+    m = re.search(r"/t/[^/]+/(\d+)", url)
+    if m:
+        return int(m.group(1))
+    return None
+
+
+def _parse_topic_text(text: str) -> list[dict[str, Any]]:
+    """Parse the text-format response from discourse_read_topic into a list of post dicts.
+
+    Format: ``- Post #N by @username (date)\\n  content...``
+    """
+    import re
+    posts: list[dict[str, Any]] = []
+    # Split on post markers
+    parts = re.split(r"^- Post #(\d+) by @(\S+) \(([^)]+)\)", text, flags=re.MULTILINE)
+    # parts[0] is the header before the first post
+    # Then groups of 4: post_num, username, date, content
+    i = 1
+    while i + 3 <= len(parts):
+        post_num = int(parts[i])
+        username = parts[i + 1]
+        post_date = parts[i + 2]
+        content = parts[i + 3].strip()
+        # Remove trailing "Link: ..." line
+        content = re.sub(r"\nLink: https?://\S+\s*$", "", content).strip()
+        # Remove image upload references
+        content = re.sub(r"!\[[^\]]*\]\([^)]+\)\s*", "", content).strip()
+        posts.append({
+            "post_num": post_num,
+            "username": username,
+            "date": post_date,
+            "text": content,
+        })
+        i += 4
+    return posts
+
+
+def _pick_top_replies(posts: list[dict[str, Any]], max_replies: int = 5) -> list[dict[str, Any]]:
+    """Select the most valuable replies from a thread's posts.
+
+    Skips the first post (OP) and returns up to *max_replies* by order
+    (MCP returns posts in engagement order or chronological).
+    """
+    if len(posts) <= 1:
+        return []
+    replies = posts[1:]  # skip OP
+    # Sort by likes if available, otherwise keep order
+    replies.sort(key=lambda p: p.get("likes", p.get("like_count", 0)), reverse=True)
+    picked = []
+    for r in replies[:max_replies]:
+        text = r.get("text", r.get("raw", r.get("cooked", "")))
+        # Strip HTML tags if present
+        if "<" in text:
+            import re
+            text = re.sub(r"<[^>]+>", "", text)
+        # Truncate long replies
+        if len(text) > 300:
+            text = text[:297] + "..."
+        picked.append({
+            "username": r.get("username", r.get("author", "匿名")),
+            "likes": r.get("likes", r.get("like_count", 0)),
+            "text": text.strip(),
+        })
+    return [r for r in picked if r["text"]]
+
+
+def _enrich_thread(thread: dict[str, Any], posts: list[dict[str, Any]]) -> dict[str, Any]:
+    """Merge reply data into the thread dict."""
+    enriched = dict(thread)
+    if not posts:
+        return enriched
+
+    # OP content (first post)
+    op_text = posts[0].get("text", "")
+    if len(op_text) > 500:
+        op_text = op_text[:497] + "..."
+    if op_text:
+        enriched["op_content"] = op_text.strip()
+
+    # Top replies
+    top_replies = _pick_top_replies(posts)
+    if top_replies:
+        enriched["top_replies"] = top_replies
+
+    # Reply count
+    enriched["reply_count"] = len(posts) - 1 if len(posts) > 1 else 0
+    return enriched
+
+
+async def fetch_thread_details_async(
+    threads: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Fetch detail (posts/replies) for each thread via MCP and enrich them.
+
+    Uses a single MCP session for all calls. If MCP_DETAIL_TOOL is unset,
+    falls back to DEFAULT_DETAIL_TOOL. Errors on individual threads are
+    logged and skipped (the thread is returned un-enriched).
+    """
+    detail_tool = os.environ.get(ENV_DETAIL_TOOL, "").strip() or DEFAULT_DETAIL_TOOL
+
+    # Collect topic IDs
+    topics = [(i, _extract_topic_id(t)) for i, t in enumerate(threads)]
+    valid_topics = [(i, tid) for i, tid in topics if tid is not None]
+    if not valid_topics:
+        logger.warning("No topic IDs found in threads; skipping detail fetch")
+        return threads
+
+    fixture = _load_fixture()
+    if fixture is not None:
+        # In fixture mode, threads already have whatever data the fixture provides
+        logger.info("Fixture mode: skipping MCP detail fetch")
+        return threads
+
+    params = _stdio_params()
+    enriched = list(threads)  # copy
+
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            for idx, topic_id in valid_topics:
+                try:
+                    result = await session.call_tool(
+                        detail_tool,
+                        {"topic_id": topic_id, "post_limit": DETAIL_POST_LIMIT},
+                    )
+                    # discourse_read_topic returns text, not structured JSON
+                    raw_text = ""
+                    for block in result.content:
+                        if isinstance(block, types.TextContent):
+                            raw_text += block.text
+                    posts = _parse_topic_text(raw_text)
+                    enriched[idx] = _enrich_thread(threads[idx], posts)
+                    logger.info(
+                        "Fetched %d posts for topic %d (%s)",
+                        len(posts), topic_id, threads[idx].get("title", "?")[:30],
+                    )
+                except Exception:
+                    logger.warning("Failed to fetch details for topic %d; skipping", topic_id, exc_info=True)
+
+    return enriched
+
+
+def fetch_thread_details(threads: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Sync entrypoint for thread detail enrichment."""
+    return anyio.run(fetch_thread_details_async, threads)
+
+
+def select_threads(
+    threads: list[dict[str, Any]],
+    max_count: int = 7,
+    max_per_category: int = 3,
+) -> list[dict[str, Any]]:
+    """Score and select diverse threads from a larger pool.
+
+    Scoring combines likes, views, and reply count. Category diversity is
+    enforced by capping per-category selections.
+    """
+    if len(threads) <= max_count:
+        return threads
+
+    def _score(t: dict[str, Any]) -> float:
+        likes = t.get("like_count", t.get("likes", 0)) or 0
+        views = t.get("views", 0) or 0
+        posts = t.get("posts_count", t.get("reply_count", 0)) or 0
+        # Weighted composite: likes matter most, views secondary, posts for controversy
+        return likes * 3 + views * 0.01 + posts * 2
+
+    scored = sorted(threads, key=_score, reverse=True)
+
+    selected: list[dict[str, Any]] = []
+    cat_counts: dict[str, int] = {}
+
+    for t in scored:
+        if len(selected) >= max_count:
+            break
+        cat = t.get("category", "其他")
+        if cat_counts.get(cat, 0) >= max_per_category:
+            continue
+        selected.append(t)
+        cat_counts[cat] = cat_counts.get(cat, 0) + 1
+
+    # If we didn't fill up due to category caps, relax caps and add remaining
+    if len(selected) < max_count:
+        relaxed_max = max_per_category + 1
+        for t in scored:
+            if len(selected) >= max_count:
+                break
+            if t not in selected:
+                cat = t.get("category", "其他")
+                if cat_counts.get(cat, 0) < relaxed_max:
+                    selected.append(t)
+                    cat_counts[cat] = cat_counts.get(cat, 0) + 1
+
+    return selected
+
+
 def threads_to_source_markdown(threads: list[dict[str, Any]]) -> str:
     """Turn structured extraction into a Chinese-friendly NotebookLM source (no LLM)."""
     lines: list[str] = [
         "# 美卡论坛（USCardForum）· 本周热点素材\n\n",
         "> 供 **NotebookLM** 上传为来源。生成 Audio Overview 时请在说明中使用 **中文** 口播。\n\n",
     ]
+    # Keys to render as top-level metadata (skip enriched fields handled separately)
+    _ENRICHED_KEYS = {"op_content", "top_replies", "reply_count"}
+
     for i, t in enumerate(threads, 1):
         lines.append(f"## 线索 {i}\n\n")
+        # Metadata fields
         for key, val in t.items():
+            if key in _ENRICHED_KEYS:
+                continue
             if isinstance(val, (dict, list)):
                 val_s = json.dumps(val, ensure_ascii=False, indent=2)
             else:
                 val_s = str(val)
             lines.append(f"- **{key}**：{val_s}\n")
+
+        # OP content (from detail fetch)
+        if "op_content" in t:
+            lines.append(f"\n### 楼主原文摘要\n\n{t['op_content']}\n")
+
+        # Top replies (from detail fetch)
+        if "top_replies" in t and t["top_replies"]:
+            reply_count = t.get("reply_count", len(t["top_replies"]))
+            lines.append(f"\n### 精选回复（共 {reply_count} 条讨论）\n\n")
+            for r in t["top_replies"]:
+                likes_str = f" (❤️{r['likes']})" if r.get("likes") else ""
+                lines.append(f"- **@{r['username']}**{likes_str}：{r['text']}\n")
+
         lines.append("\n")
     return "".join(lines)
 

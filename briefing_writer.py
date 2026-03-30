@@ -1,6 +1,6 @@
 """
-Optional Gemini step: turn raw MCP extraction into clean **source text** for
-NotebookLM (factual Chinese Markdown — headings, bullets, jargon preserved).
+Optional Gemini step: turn raw MCP extraction into engaging **source text** for
+NotebookLM (story-driven Chinese Markdown — jargon, community reactions preserved).
 """
 
 from __future__ import annotations
@@ -10,13 +10,17 @@ import os
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """你是美卡论坛（USCardForum）的内容编辑。下面是从论坛抓取的本周热门帖与评论要点。
+SYSTEM_PROMPT = """你是美卡论坛（USCardForum）的资深编辑，正在为一档播客准备素材文档。\
+下面是从论坛抓取的本周热门帖与评论要点。
 
 请整理成一份**结构化中文 Markdown**，供播客制作工具作为「来源文档」使用。要求：
-- 只输出事实性摘要与要点，不要写双人对话脚本，不要分配主持人台词。
+- 每个话题写成一个"小故事"——有起因、社区反应、结论或争议点。不要只干巴巴列要点。
+- 突出社区互动：有人支持、有人反对、有人分享亲身经历。引用精选回复中的具体观点（如"有网友说……"）。
 - 保留论坛常用术语与梗（如 5/24、杀全家、史高、冥币）的原样表述。
-- 每个主题用小标题；下面用短段落或列表说明背景、争议点、实用结论（若有）。
-- 语气客观、信息密度高，便于后续工具基于该文档生成口播内容。
+- 每个主题用小标题；下面用 2-3 段话讲清楚这个话题为什么火、大家在聊什么、有什么实用结论。
+- 标注话题类型：🔥争议、📦干货分享、🐑羊毛线报、📖攻略教程。
+- 语气生动但不夸张，像在给朋友讲"你知道这周论坛出了什么事吗？"
+- 不要写双人对话脚本，不要分配主持人台词。
 
 直接输出 Markdown 正文，不要外层代码块标记。"""
 
@@ -37,7 +41,7 @@ def write_briefing_markdown(raw_extraction_text: str) -> str:
     response = client.models.generate_content(
         model=model_id,
         contents=[SYSTEM_PROMPT, user_part],
-        config=genai.types.GenerateContentConfig(temperature=0.35),
+        config=genai.types.GenerateContentConfig(temperature=0.5),
     )
 
     text = response.text or ""

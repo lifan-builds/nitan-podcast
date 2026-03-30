@@ -11,9 +11,14 @@ import pytest
 
 from extractor import (
     ENV_FIXTURE,
+    _enrich_thread,
+    _extract_topic_id,
     _load_fixture,
     _parse_json_list,
     _parse_tool_arguments,
+    _parse_topic_text,
+    _pick_top_replies,
+    select_threads,
     threads_to_source_markdown,
     tool_result_to_threads,
 )
@@ -206,6 +211,199 @@ class TestToolResultToThreads:
         result = _make_call_tool_result(is_error=True, text_contents=["boom"])
         with pytest.raises(RuntimeError, match="isError=true"):
             tool_result_to_threads(result)
+
+
+# ---------------------------------------------------------------------------
+# extractor.py -- thread detail enrichment
+# ---------------------------------------------------------------------------
+
+class TestExtractTopicId:
+
+    def test_from_id_field(self):
+        assert _extract_topic_id({"id": 493110}) == 493110
+
+    def test_from_url(self):
+        assert _extract_topic_id({"url": "https://www.uscardforum.com/t/topic/493110"}) == 493110
+
+    def test_from_url_with_slug(self):
+        assert _extract_topic_id({"url": "https://www.uscardforum.com/t/some-slug/12345"}) == 12345
+
+    def test_no_id_returns_none(self):
+        assert _extract_topic_id({"title": "no id"}) is None
+
+
+class TestParseTopicText:
+
+    SAMPLE_TEXT = """# Test Thread
+Category ID 12
+
+- Post #1 by @alice (2026-03-28 09:38)
+  This is the OP content.
+  Second line of OP.
+- Post #2 by @bob (2026-03-28 10:00)
+  Great post!
+- Post #3 by @carol (2026-03-28 10:15)
+  I disagree, here's why...
+
+Link: https://www.uscardforum.com/t/topic/12345"""
+
+    def test_parses_all_posts(self):
+        posts = _parse_topic_text(self.SAMPLE_TEXT)
+        assert len(posts) == 3
+
+    def test_post_fields(self):
+        posts = _parse_topic_text(self.SAMPLE_TEXT)
+        assert posts[0]["username"] == "alice"
+        assert posts[0]["post_num"] == 1
+        assert "OP content" in posts[0]["text"]
+
+    def test_strips_link_footer(self):
+        posts = _parse_topic_text(self.SAMPLE_TEXT)
+        last = posts[-1]
+        assert "Link:" not in last["text"]
+
+    def test_empty_text(self):
+        assert _parse_topic_text("") == []
+
+    def test_no_posts(self):
+        assert _parse_topic_text("# Just a header\nNo posts here.") == []
+
+
+class TestPickTopReplies:
+
+    def test_empty_posts(self):
+        assert _pick_top_replies([]) == []
+
+    def test_op_only(self):
+        assert _pick_top_replies([{"text": "OP post"}]) == []
+
+    def test_sorts_by_likes(self):
+        posts = [
+            {"text": "OP"},
+            {"text": "reply1", "likes": 5, "username": "a"},
+            {"text": "reply2", "likes": 20, "username": "b"},
+            {"text": "reply3", "likes": 10, "username": "c"},
+        ]
+        result = _pick_top_replies(posts, max_replies=2)
+        assert len(result) == 2
+        assert result[0]["username"] == "b"
+        assert result[1]["username"] == "c"
+
+    def test_truncates_long_text(self):
+        posts = [
+            {"text": "OP"},
+            {"text": "x" * 500, "likes": 1, "username": "u"},
+        ]
+        result = _pick_top_replies(posts)
+        assert len(result[0]["text"]) <= 300
+
+
+class TestEnrichThread:
+
+    def test_adds_op_content(self):
+        thread = {"title": "Test"}
+        posts = [{"text": "OP content here", "username": "a"}]
+        enriched = _enrich_thread(thread, posts)
+        assert "op_content" in enriched
+        assert "OP content" in enriched["op_content"]
+
+    def test_adds_top_replies(self):
+        thread = {"title": "Test"}
+        posts = [
+            {"text": "OP", "username": "op"},
+            {"text": "reply1", "likes": 5, "username": "a"},
+            {"text": "reply2", "likes": 10, "username": "b"},
+        ]
+        enriched = _enrich_thread(thread, posts)
+        assert "top_replies" in enriched
+        assert len(enriched["top_replies"]) == 2
+        assert enriched["reply_count"] == 2
+
+    def test_empty_detail(self):
+        thread = {"title": "Test"}
+        enriched = _enrich_thread(thread, [])
+        assert enriched == thread
+
+    def test_preserves_original_fields(self):
+        thread = {"title": "Test", "category": "玩卡", "views": 100}
+        posts = [{"text": "OP", "username": "a"}]
+        enriched = _enrich_thread(thread, posts)
+        assert enriched["title"] == "Test"
+        assert enriched["category"] == "玩卡"
+        assert enriched["views"] == 100
+
+
+# ---------------------------------------------------------------------------
+# extractor.py -- enriched markdown rendering
+# ---------------------------------------------------------------------------
+
+class TestEnrichedMarkdown:
+
+    def test_renders_op_content(self):
+        threads = [{"title": "T", "op_content": "OP摘要内容"}]
+        md = threads_to_source_markdown(threads)
+        assert "### 楼主原文摘要" in md
+        assert "OP摘要内容" in md
+
+    def test_renders_top_replies(self):
+        threads = [{
+            "title": "T",
+            "top_replies": [
+                {"username": "user1", "likes": 10, "text": "好帖"},
+                {"username": "user2", "likes": 5, "text": "同意"},
+            ],
+            "reply_count": 15,
+        }]
+        md = threads_to_source_markdown(threads)
+        assert "### 精选回复" in md
+        assert "15 条讨论" in md
+        assert "@user1" in md
+        assert "好帖" in md
+
+    def test_no_enrichment_still_works(self):
+        threads = [{"title": "Basic", "category": "闲聊"}]
+        md = threads_to_source_markdown(threads)
+        assert "### 楼主原文摘要" not in md
+        assert "### 精选回复" not in md
+        assert "**title**" in md
+
+
+# ---------------------------------------------------------------------------
+# extractor.py -- thread selection
+# ---------------------------------------------------------------------------
+
+class TestSelectThreads:
+
+    def test_returns_all_when_under_max(self):
+        threads = [{"title": f"T{i}", "like_count": i} for i in range(5)]
+        assert select_threads(threads, max_count=7) == threads
+
+    def test_selects_top_scored(self):
+        threads = [
+            {"title": "low", "like_count": 1, "views": 10, "category": "A"},
+            {"title": "high", "like_count": 100, "views": 5000, "category": "B"},
+            {"title": "mid", "like_count": 50, "views": 2000, "category": "C"},
+        ]
+        result = select_threads(threads, max_count=2)
+        assert len(result) == 2
+        titles = [t["title"] for t in result]
+        assert "high" in titles
+        assert "mid" in titles
+
+    def test_category_diversity(self):
+        # 6 threads in category A, 4 in B — cap should promote B threads
+        threads = [
+            {"title": f"A{i}", "like_count": 100 - i, "category": "A"} for i in range(6)
+        ] + [
+            {"title": f"B{i}", "like_count": 50 - i, "category": "B"} for i in range(4)
+        ]
+        result = select_threads(threads, max_count=7, max_per_category=3)
+        a_count = sum(1 for t in result if t["category"] == "A")
+        b_count = sum(1 for t in result if t["category"] == "B")
+        # Initial pass caps A at 3, then relaxed backfill may add 1 more
+        assert a_count <= 4
+        assert b_count >= 3  # B gets promoted thanks to cap
+        assert len(result) == 7
 
 
 # ---------------------------------------------------------------------------
@@ -420,3 +618,31 @@ class TestIntegrationSmokeTest:
 
         rc = main(["--markdown-input", str(existing_md)])
         assert rc == 0
+
+    def test_platform_links_env_in_forum_post(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        """PODCAST_PLATFORM_LINKS env var should be parsed and passed to forum post."""
+        monkeypatch.setenv(ENV_FIXTURE, str(SAMPLE_FIXTURE))
+        monkeypatch.setenv("GEMINI_API_KEY", "")
+        monkeypatch.setenv(
+            "PODCAST_PLATFORM_LINKS",
+            '{"Spotify":"https://open.spotify.com/show/test","小宇宙":"https://www.xiaoyuzhoufm.com/podcast/test"}',
+        )
+
+        from run_pipeline import main
+
+        rc = main([
+            "--skip-briefing",
+            "--export-dir", str(tmp_path),
+            "--output-filename", "links_test.md",
+            "--generate-post",
+            "--audio-url", "https://example.com/test.mp3",
+        ])
+        assert rc == 0
+
+        # Find the forum post file
+        post_files = list(tmp_path.glob("*forum_post*"))
+        assert len(post_files) == 1
+        content = post_files[0].read_text(encoding="utf-8")
+        assert "Spotify" in content
+        assert "小宇宙" in content
+        assert "open.spotify.com" in content

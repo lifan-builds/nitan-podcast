@@ -101,7 +101,8 @@ def _build_channel(config: dict[str, str]) -> tuple[ET.Element, ET.Element]:
     _sub(channel, _itunes("summary"), config["description"])
     _sub(channel, _itunes("type"), "episodic")
     _sub(channel, _itunes("explicit"), "false")
-    _sub(channel, _itunes("category"), text=config["category"])
+    # Spotify/Apple require text= as XML attribute, not element text
+    ET.SubElement(channel, _itunes("category"), {"text": config["category"]})
 
     if config["cover_art_url"]:
         _sub(channel, _itunes("image"), href=config["cover_art_url"])
