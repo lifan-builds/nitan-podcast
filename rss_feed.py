@@ -27,6 +27,7 @@ from publisher import (
     episode_guid,
     episode_metadata,
 )
+from public_contract import PUBLIC_AUDIO_BASE_URL, PUBLIC_COVER_ART_URL, PUBLIC_FEED_URL
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +55,9 @@ def _podcast_config() -> dict[str, str]:
         "owner_name": os.environ.get("PODCAST_OWNER_NAME", "").strip() or SERIES_NAME,
         "owner_email": os.environ.get("PODCAST_OWNER_EMAIL", "").strip() or "lifan.builds@gmail.com",
         "cover_art_url": os.environ.get("PODCAST_COVER_ART_URL", "").strip()
-            or "https://github.com/lifan-builds/nitan-podcast/raw/main/assets/cover.png",
+            or PUBLIC_COVER_ART_URL,
         "feed_url": os.environ.get("PODCAST_FEED_URL", "").strip()
-            or "https://lifan-builds.github.io/nitan-podcast/feed.xml",
+            or PUBLIC_FEED_URL,
         "category": os.environ.get("PODCAST_CATEGORY", "").strip() or PODCAST_CATEGORY,
     }
 
@@ -164,7 +165,7 @@ def _find_item_guid(item: ET.Element) -> str | None:
 # Main entry point
 # ---------------------------------------------------------------------------
 
-PAGES_AUDIO_BASE = "https://lifan-builds.github.io/nitan-podcast/episodes"
+PAGES_AUDIO_BASE = PUBLIC_AUDIO_BASE_URL
 EPISODES_DIR = Path("docs/episodes")
 
 

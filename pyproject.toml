@@ -1,7 +1,7 @@
 [project]
-name = "nitan-pod"
+name = "nitan-podcast"
 version = "0.1.0"
-description = "USCardForum weekly AI podcast pipeline (NotebookLM-first)"
+description = "Nitan Podcast show repository and publication pipeline"
 requires-python = ">=3.10"
 
 [tool.pytest.ini_options]

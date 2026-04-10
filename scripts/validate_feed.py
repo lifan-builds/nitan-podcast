@@ -17,7 +17,13 @@ import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-LIVE_FEED_URL = "https://lifan-builds.github.io/nitan-podcast/feed.xml"
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from public_contract import PUBLIC_FEED_URL
+
+LIVE_FEED_URL = PUBLIC_FEED_URL
 ITUNES_NS = "http://www.itunes.com/dtds/podcast-1.0.dtd"
 
 errors: list[str] = []

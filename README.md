@@ -1,41 +1,19 @@
-# Nitan Podcast — 美卡论坛 (USCardForum) 每周AI播客
+# Nitan Podcast
 
-**论坛帖：[【Nitan Podcast】你的每周美卡论坛精华播客](https://www.uscardforum.com/t/topic/494521)**
+Weekly Chinese podcast generated from hot discussions on USCardForum.
 
-Python 3.10+ pipeline that extracts weekly hot threads from [uscardforum.com](https://uscardforum.com) via [**Nitan MCP**](https://www.uscardforum.com/t/topic/450599), optionally refines with **Gemini**, and feeds **Google NotebookLM** to generate a ~6 min 简体中文 podcast.
+`Nitan Podcast` is the public show repository: it owns the podcast identity, feed, episode assets, forum post templates, and the Nitan/USCardForum-specific logic behind each episode. The reusable automation is being split into `CastForge`, while this repo remains the canonical home of the show.
+
+**Forum thread:** [【Nitan Podcast】你的每周美卡论坛精华播客](https://www.uscardforum.com/t/topic/494521)
 
 ```mermaid
 flowchart LR
-  E[Extract via MCP] --> B[Optional Gemini brief]
+  E[Extract via Nitan MCP] --> B[Optional Gemini brief]
   B --> X[Export Markdown]
   X --> NLM[NotebookLM Audio]
   NLM --> MP3[GitHub Pages MP3]
   MP3 --> RSS[Apple / Spotify / RSS]
 ```
-
-## Quick Start
-
-```bash
-git clone https://github.com/lifan-builds/nitan-podcast.git
-cd nitan-podcast
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # Configure MCP_*, optional GEMINI_API_KEY, NOTEBOOKLM_*
-```
-
-## Run the Pipeline
-
-```bash
-python run_pipeline.py --dated                          # MCP → Gemini → Markdown
-python run_pipeline.py --dated --skip-briefing          # Skip Gemini
-python run_pipeline.py --dated --publish-notebooklm     # + NotebookLM audio
-python run_pipeline.py --dated --generate-post --generate-rss --audio-url "https://..."
-
-# Dry run (no MCP needed)
-EXTRACTION_FIXTURE_PATH=fixtures/sample_extraction.json python run_pipeline.py --skip-briefing --dated
-```
-
-Stdout prints the output file path. See `python run_pipeline.py --help` for all flags.
 
 ## Subscribe
 
@@ -46,68 +24,110 @@ Stdout prints the output file path. See `python run_pipeline.py --help` for all 
 | **RSS** | `https://lifan-builds.github.io/nitan-podcast/feed.xml` |
 | **美卡论坛** | [announcement thread](https://www.uscardforum.com/t/topic/494521) |
 
-## GitHub Actions (Automated Weekly Pipeline)
+## Public Compatibility Contract
 
-Runs on a **self-hosted macOS runner** (`nitan-mac`). Schedule: 3 retry windows every Monday (6 AM / 12 PM / 6 PM PST). First success publishes; subsequent triggers skip.
+The automation may move into `CastForge`, but the subscriber-facing surface of this show must stay stable.
 
-**Pipeline phases:**
+- Feed URL stays `https://lifan-builds.github.io/nitan-podcast/feed.xml`
+- Site URL stays `https://lifan-builds.github.io/nitan-podcast/`
+- Episode URLs stay `https://lifan-builds.github.io/nitan-podcast/episodes/weekly_meika_YYYY-Www.mp3`
+- Episode GUIDs keep the `nitan-podcast-YYYY-Www` format
+- `docs/feed.xml` and `docs/episodes/` remain the publication targets
 
-1. MCP extract → Gemini briefing → export Markdown
-2. NotebookLM → Audio Overview → MP3
-3. GitHub Release (backup) + copy MP3 to `docs/episodes/`
-4. Generate RSS feed + forum post draft
-5. Commit + push (GitHub Pages auto-deploys)
-6. Validate live feed (`scripts/validate_feed.py`)
+That is what keeps Spotify and Apple Podcasts from seeing the migration as a broken or new feed.
 
-**Manual trigger:** Actions → `weekly-podcast` → Run workflow.
+## What This Repo Owns
 
-**Only manual step:** Post `exports/*_forum_reply.md` as a reply to the [announcement thread](https://www.uscardforum.com/t/topic/494521).
+- Nitan MCP extraction and thread-selection logic
+- Chinese editorial prompts and podcast/forum copy
+- Podcast metadata and RSS identity
+- `docs/feed.xml` and `docs/episodes/*.mp3`
+- Show assets such as cover art
+- Validation and tests for this show's public contract
+
+## What `CastForge` Owns
+
+- reusable pipeline stages
+- scheduling and workflow automation
+- self-hosted runner setup
+- job orchestration and idempotency
+- shared integrations for LLM and audio tooling
+
+See `podcast.yaml` for the instance contract this repo will expose to `CastForge`, and `docs/castforge-migration.md` for the migration plan.
+
+## Quick Start
+
+```bash
+git clone https://github.com/lifan-builds/nitan-podcast.git
+cd nitan-podcast
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+Configure `MCP_*`, optional `GEMINI_API_KEY`, and `NOTEBOOKLM_*` in `.env`.
+
+## Run The Podcast Pipeline
+
+```bash
+python run_pipeline.py --dated
+python run_pipeline.py --dated --skip-briefing
+python run_pipeline.py --dated --publish-notebooklm
+python run_pipeline.py --dated --generate-post --generate-rss --audio-url "https://..."
+
+# Dry run without MCP
+EXTRACTION_FIXTURE_PATH=fixtures/sample_extraction.json python run_pipeline.py --skip-briefing --dated
+```
+
+Stdout prints the primary output path. See `python run_pipeline.py --help` for the full CLI.
 
 ## NotebookLM Setup
 
-For `--publish-notebooklm` (programmatic audio via [notebooklm-py](https://github.com/teng-lin/notebooklm-py)):
+For `--publish-notebooklm` using [notebooklm-py](https://github.com/teng-lin/notebooklm-py):
 
 1. `pip install -r requirements-integrations.txt && playwright install chromium`
-2. `notebooklm login` (stores `~/.notebooklm/storage_state.json` — **not** the same as Chrome Google sign-in)
+2. Run `notebooklm login`
 3. Set `NOTEBOOKLM_NOTEBOOK_ID` in `.env`
 
-Tune via env: `NOTEBOOKLM_AUDIO_LENGTH` (`short`/`default`/`long`), `NOTEBOOKLM_AUDIO_FORMAT`, `NOTEBOOKLM_AUDIO_INSTRUCTIONS` — see [`.env.example`](.env.example).
+The login stores `~/.notebooklm/storage_state.json`; it is separate from a normal Chrome Google sign-in.
 
-**Manual path:** Upload `exports/*.md` to NotebookLM UI → set 中文 instructions → generate Audio Overview.
+## Automation
 
-## Environment
+Today this repo still includes the weekly GitHub Actions workflow, but the long-term split is:
 
-All env vars documented in [`.env.example`](.env.example). Key ones:
+- `CastForge` runs the schedule and automation
+- `nitan-podcast` remains the public publishing repo
 
-- `MCP_SERVER_COMMAND` / `MCP_SERVER_ARGS` / `MCP_EXTRACT_TOOL` — Nitan MCP config
-- `GEMINI_API_KEY` — optional, for briefing
-- `NOTEBOOKLM_NOTEBOOK_ID` — required for `--publish-notebooklm`
+The existing workflow uses a self-hosted macOS runner with three Monday retry windows. It publishes to `docs/episodes/`, updates `docs/feed.xml`, and validates the live feed with `scripts/validate_feed.py`.
 
 ## Development
 
 ```bash
-pytest tests/ -v              # 91 tests, offline, <1s
-python scripts/validate_feed.py   # Check RSS feed (local or live)
+pytest tests/ -v
+python scripts/validate_feed.py
 ```
 
-Project docs: [`AGENTS.md`](AGENTS.md) (architecture), [`PLANS.md`](PLANS.md) (plan), [`FINDINGS.md`](FINDINGS.md) (research), [`EVALUATION.md`](EVALUATION.md) (contracts).
+Useful docs:
+
+- `AGENTS.md` for architecture and conventions
+- `docs/castforge-migration.md` for the repo split plan
+- `podcast.yaml` for the future instance contract
 
 ## Project Structure
 
-| File | Purpose |
+| Path | Purpose |
 | ---- | ------- |
-| `run_pipeline.py` | CLI orchestrator |
-| `extractor.py` | MCP client + fixture support |
+| `run_pipeline.py` | Current CLI orchestrator |
+| `extractor.py` | Nitan MCP extraction + fixture support |
 | `briefing_writer.py` | Optional Gemini briefing |
 | `notebooklm_export.py` | UTF-8 Markdown export |
 | `notebooklm_audio.py` | NotebookLM upload/generate/download |
 | `publisher.py` | Episode metadata + forum posts |
 | `rss_feed.py` | RSS 2.0 + iTunes feed generator |
-| `docs/episodes/` | MP3s served by GitHub Pages (`audio/mpeg`) |
-| `scripts/validate_feed.py` | Post-publish feed validator |
-| `scripts/run_live_demo.sh` | Live demo script |
-| `scripts/setup_runner.sh` | Runner prerequisite checker |
-| `tests/` | 91 pytest tests (pipeline, publisher, RSS) |
+| `public_contract.py` | Stable public URLs and identifiers |
+| `docs/episodes/` | MP3s served by GitHub Pages |
+| `scripts/validate_feed.py` | Feed validator |
+| `tests/` | Offline pytest coverage |
 
 ## License
 

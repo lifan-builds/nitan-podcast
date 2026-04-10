@@ -1,8 +1,7 @@
-# Full weekly podcast pipeline on self-hosted macOS runner.
+# Manual fallback workflow for the public nitan-podcast repo.
 #
-# Retry window: 3 cron triggers across Monday (PST). First successful run
-# publishes the episode; subsequent triggers detect the existing GitHub Release
-# and skip (idempotent).
+# Scheduled automation has moved to the CastForge repo. This workflow remains
+# available as a manual fallback against the public publishing repo.
 #
 # Self-hosted runner prerequisites:
 #   - Python 3.10+ venv at .venv/ with requirements.txt installed
@@ -16,10 +15,6 @@
 name: weekly-podcast
 
 on:
-  schedule:
-    - cron: "0 14 * * 1"   # Monday  6 AM PST / 2 PM UTC
-    - cron: "0 20 * * 1"   # Monday 12 PM PST / 8 PM UTC
-    - cron: "0 2 * * 2"    # Monday  6 PM PST / Tue 2 AM UTC
   workflow_dispatch:
     inputs:
       skip_audio:

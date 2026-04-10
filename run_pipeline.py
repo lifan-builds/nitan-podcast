@@ -1,24 +1,13 @@
 #!/usr/bin/env python3
-"""
-Weekly-job-friendly orchestrator: MCP extract → optional Gemini briefing → Markdown export;
-optional ``--publish-notebooklm`` uploads to NotebookLM (notebooklm-py) and downloads Audio Overview.
-
-Exit 0 on success, 1 on failure. Logs to stderr. No interactive prompts.
-"""
+"""Show-specific wrapper around the extracted CastForge pipeline."""
 
 from __future__ import annotations
 
-import argparse
-import json
-import logging
-import os
-import sys
-from datetime import date
-from pathlib import Path
+from _castforge import ensure_castforge_on_path
 
-from dotenv import load_dotenv
+ensure_castforge_on_path()
 
-from briefing_writer import write_briefing_markdown
+from castforge.pipeline import PipelineHooks, main as castforge_main
 from extractor import (
     extract_weekly_key_info,
     fetch_thread_details,
@@ -26,237 +15,25 @@ from extractor import (
     select_threads,
     threads_to_source_markdown,
 )
-from notebooklm_export import DEFAULT_EXPORT_DIR, DEFAULT_MARKDOWN_NAME, export_for_notebooklm
+from public_contract import EPISODE_FILE_PREFIX, week_episode_filename, week_episode_url
 from publisher import write_forum_post
-
-DEFAULT_RELEASES_DIR = Path("releases")
-
-
-def _week_filename(prefix: str = "weekly_meika", ext: str = ".md") -> str:
-    iso = date.today().isocalendar()
-    return f"{prefix}_{iso.year}-W{iso.week:02d}{ext}"
-
-
-def _default_audio_out(dated: bool) -> Path:
-    iso = date.today().isocalendar()
-    name = f"weekly_meika_{iso.year}-W{iso.week:02d}.mp3" if dated else "weekly_meika_podcast.mp3"
-    return (DEFAULT_RELEASES_DIR / name).resolve()
-
-
-def _setup_logging(level: str) -> None:
-    logging.basicConfig(
-        level=getattr(logging, level.upper(), logging.INFO),
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        datefmt="%Y-%m-%dT%H:%M:%S",
-        stream=sys.stderr,
-    )
+from rss_feed import generate_rss_feed
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="USCardForum → NotebookLM Markdown export pipeline")
-    parser.add_argument(
-        "--env-file",
-        type=Path,
-        default=Path(".env"),
-        help="Dotenv path (default: .env)",
+    hooks = PipelineHooks(
+        extract_weekly_key_info=extract_weekly_key_info,
+        fetch_thread_details=fetch_thread_details,
+        list_mcp_tools=list_mcp_tools,
+        select_threads=select_threads,
+        threads_to_source_markdown=threads_to_source_markdown,
+        write_forum_post=write_forum_post,
+        generate_rss_feed=generate_rss_feed,
+        episode_file_prefix=EPISODE_FILE_PREFIX,
+        week_episode_filename=week_episode_filename,
+        week_episode_url=week_episode_url,
     )
-    parser.add_argument("--skip-briefing", action="store_true", help="Skip Gemini; export structured Markdown from extraction only")
-    parser.add_argument("--export-dir", type=Path, default=None, help=f"Export directory (default: {DEFAULT_EXPORT_DIR})")
-    parser.add_argument(
-        "--output-filename",
-        default=None,
-        help=f"Output filename (default: {DEFAULT_MARKDOWN_NAME} or ISO-week name if --dated)",
-    )
-    parser.add_argument("--dated", action="store_true", help="Use ISO week filename weekly_meika_YYYY-Www.md")
-    parser.add_argument("--log-level", default="INFO", help="Logging level (DEBUG, INFO, WARNING, ERROR)")
-    parser.add_argument(
-        "--list-mcp-tools",
-        action="store_true",
-        help="Connect to MCP server, print tool names/schemas as JSON, exit",
-    )
-    parser.add_argument(
-        "--skip-details",
-        action="store_true",
-        help="Skip fetching thread replies/details (faster, uses only OP-level data)",
-    )
-    parser.add_argument(
-        "--markdown-input",
-        type=Path,
-        default=None,
-        help="Skip extraction; use this existing Markdown file as input (for reuse across pipeline phases)",
-    )
-    parser.add_argument(
-        "--publish-notebooklm",
-        action="store_true",
-        help="After export: upload Markdown to NotebookLM, generate Audio Overview, download MP3 (requires notebooklm-py + notebooklm login)",
-    )
-    parser.add_argument(
-        "--notebooklm-audio-out",
-        type=Path,
-        default=None,
-        help="Path for downloaded audio (default: releases/weekly_meika_YYYY-Www.mp3 if --dated else releases/weekly_meika_podcast.mp3)",
-    )
-    parser.add_argument(
-        "--generate-post",
-        action="store_true",
-        help="Generate a 美卡论坛 Discourse post (Markdown) alongside the export",
-    )
-    parser.add_argument(
-        "--audio-url",
-        default=None,
-        help="Podcast episode URL to embed in the forum post and RSS feed",
-    )
-    parser.add_argument(
-        "--generate-rss",
-        action="store_true",
-        help="Generate/update podcast RSS feed (docs/feed.xml) for Apple Podcasts / Spotify / 小宇宙",
-    )
-    parser.add_argument(
-        "--rss-output",
-        type=Path,
-        default=None,
-        help="Path for RSS feed file (default: docs/feed.xml)",
-    )
-    parser.add_argument(
-        "--episode-duration",
-        default="00:06:00",
-        help="Episode duration as HH:MM:SS for RSS feed (default: 00:06:00)",
-    )
-    parser.add_argument(
-        "--mp3-path",
-        type=Path,
-        default=None,
-        help="Path to local MP3 file (used for RSS enclosure file size detection)",
-    )
-    args = parser.parse_args(argv)
-
-    _setup_logging(args.log_level)
-    log = logging.getLogger("run_pipeline")
-
-    if args.env_file.is_file():
-        load_dotenv(args.env_file, override=False)
-    else:
-        load_dotenv(override=False)
-
-    if args.list_mcp_tools:
-        try:
-            tools = list_mcp_tools()
-            out = [
-                {
-                    "name": t.name,
-                    "description": getattr(t, "description", None),
-                    "inputSchema": getattr(t, "inputSchema", None),
-                }
-                for t in tools
-            ]
-            json.dump(out, sys.stdout, ensure_ascii=False, indent=2)
-            sys.stdout.write("\n")
-            return 0
-        except Exception:
-            log.exception("Failed to list MCP tools")
-            return 1
-
-    export_dir = args.export_dir if args.export_dir is not None else DEFAULT_EXPORT_DIR
-    if args.output_filename:
-        filename = args.output_filename
-    elif args.dated:
-        filename = _week_filename()
-    else:
-        filename = DEFAULT_MARKDOWN_NAME
-
-    try:
-        if args.markdown_input:
-            md_input = Path(args.markdown_input).resolve()
-            if not md_input.is_file():
-                log.error("Markdown input not found: %s", md_input)
-                return 1
-            body = md_input.read_text(encoding="utf-8")
-            path = md_input
-            threads = None
-            log.info("Using existing Markdown: %s", path)
-        else:
-            threads = extract_weekly_key_info()
-            if not threads:
-                log.error("Extraction returned no threads")
-                return 1
-
-            # Select diverse threads if we got more than needed
-            if len(threads) > 7:
-                threads = select_threads(threads)
-                log.info("Selected %d threads after scoring", len(threads))
-
-            if not args.skip_details:
-                log.info("Fetching thread details (replies) for %d threads", len(threads))
-                threads = fetch_thread_details(threads)
-
-            raw_md = threads_to_source_markdown(threads)
-
-            if args.skip_briefing:
-                body = raw_md
-                log.info("Skipping Gemini briefing")
-            else:
-                body = write_briefing_markdown(raw_md)
-
-            path = export_for_notebooklm(body, export_dir=export_dir, filename=filename)
-            log.info("Wrote NotebookLM source: %s", path)
-
-        audio_path = None
-
-        if args.publish_notebooklm:
-            from notebooklm_audio import publish_weekly_audio
-
-            audio_path = args.notebooklm_audio_out
-            if audio_path is None:
-                audio_path = _default_audio_out(args.dated)
-            else:
-                audio_path = audio_path.resolve()
-            log.info("Publishing to NotebookLM; audio output: %s", audio_path)
-            publish_weekly_audio(path, audio_path)
-            log.info("Downloaded Audio Overview: %s", audio_path)
-
-        if args.generate_post:
-            platform_links = None
-            raw_links = os.environ.get("PODCAST_PLATFORM_LINKS", "").strip()
-            if raw_links:
-                try:
-                    platform_links = json.loads(raw_links)
-                except json.JSONDecodeError:
-                    log.warning("PODCAST_PLATFORM_LINKS is not valid JSON; ignoring")
-            post_path = write_forum_post(
-                path, audio_url=args.audio_url, extra_links=platform_links, threads=threads,
-            )
-            log.info("Wrote forum post: %s", post_path)
-
-        # RSS feed
-        if args.generate_rss:
-            from rss_feed import generate_rss_feed
-
-            rss_audio_url = args.audio_url
-            if not rss_audio_url:
-                iso = date.today().isocalendar()
-                rss_audio_url = (
-                    f"https://lifan-builds.github.io/nitan-podcast/episodes/"
-                    f"weekly_meika_{iso.year}-W{iso.week:02d}.mp3"
-                )
-            rss_mp3 = args.mp3_path or audio_path
-            feed_path = generate_rss_feed(
-                path,
-                args.rss_output,
-                audio_url=rss_audio_url,
-                duration=args.episode_duration,
-                threads=threads,
-                mp3_path=rss_mp3,
-            )
-            log.info("Updated RSS feed: %s", feed_path)
-
-        if audio_path and audio_path.is_file():
-            print(str(audio_path), file=sys.stdout)
-        else:
-            print(str(path), file=sys.stdout)
-        return 0
-    except Exception:
-        log.exception("Pipeline failed")
-        return 1
+    return castforge_main(argv, hooks=hooks)
 
 
 if __name__ == "__main__":

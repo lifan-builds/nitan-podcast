@@ -1,0 +1,46 @@
+apiVersion: castforge.dev/v1alpha1
+kind: PodcastInstance
+
+metadata:
+  slug: nitan-podcast
+  displayName: Nitan Podcast
+  language: zh
+  description: Weekly Chinese podcast generated from USCardForum hot threads.
+
+publicContract:
+  siteUrl: https://lifan-builds.github.io/nitan-podcast/
+  feedUrl: https://lifan-builds.github.io/nitan-podcast/feed.xml
+  audioBaseUrl: https://lifan-builds.github.io/nitan-podcast/episodes
+  coverArtUrl: https://github.com/lifan-builds/nitan-podcast/raw/main/assets/cover.png
+  episodeFilePrefix: weekly_meika
+  episodeGuidPrefix: nitan-podcast
+  publishPaths:
+    feed: docs/feed.xml
+    audioDir: docs/episodes
+  invariants:
+    - Keep the RSS feed URL unchanged to preserve Apple Podcasts and Spotify subscriptions.
+    - Keep historical episode URLs unchanged under docs/episodes/.
+    - Keep GUIDs stable across workflow or repository migrations.
+
+source:
+  adapter: nitan-mcp
+  inputType: forum_threads
+  configuration:
+    commandEnv: MCP_SERVER_COMMAND
+    argsEnv: MCP_SERVER_ARGS
+    extractToolEnv: MCP_EXTRACT_TOOL
+    extractArgsEnv: MCP_EXTRACT_TOOL_ARGUMENTS
+    detailToolEnv: MCP_DETAIL_TOOL
+
+editorial:
+  defaultThreadCount: 7
+  briefingProvider: gemini
+  exportFormat: notebooklm_markdown
+  audioProvider: notebooklm
+  audience: Chinese-speaking USCardForum listeners
+
+outputs:
+  markdownDir: exports
+  releaseDir: releases
+  forumReplyPattern: exports/*_forum_reply.md
+  validatorScript: scripts/validate_feed.py

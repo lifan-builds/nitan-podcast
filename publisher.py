@@ -14,6 +14,8 @@ import re
 from datetime import date
 from pathlib import Path
 
+from public_contract import PUBLIC_SITE_URL, SERIES_GUID_PREFIX
+
 logger = logging.getLogger(__name__)
 
 SERIES_NAME = "Nitan Podcast"
@@ -21,7 +23,7 @@ SERIES_ZH = "泥潭播客"
 TAGLINE = "你的每周美卡论坛精华AI播客"
 
 # RSS / Podcast distribution defaults (overridable via env vars)
-PODCAST_LINK = "https://lifan-builds.github.io/nitan-podcast/"
+PODCAST_LINK = PUBLIC_SITE_URL
 PODCAST_DESCRIPTION = "每周精选美卡论坛（泥潭）热帖，AI 自动生成的中文播客。6-8 分钟听完一周精华。"
 PODCAST_LANGUAGE = "zh"
 PODCAST_CATEGORY = "Technology"
@@ -42,8 +44,8 @@ def episode_guid(week_label: str | None = None) -> str:
     label = week_label or current_week_label()
     m = re.match(r"(\d{4})年第(\d+)周", label)
     if m:
-        return f"nitan-podcast-{m.group(1)}-W{int(m.group(2)):02d}"
-    return f"nitan-podcast-{label}"
+        return f"{SERIES_GUID_PREFIX}-{m.group(1)}-W{int(m.group(2)):02d}"
+    return f"{SERIES_GUID_PREFIX}-{label}"
 
 
 def _extract_threads(markdown: str) -> list[dict[str, str]]:
