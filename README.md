@@ -93,12 +93,20 @@ The login stores `~/.notebooklm/storage_state.json`; it is separate from a norma
 
 ## Automation
 
-Today this repo still includes the weekly GitHub Actions workflow, but the long-term split is:
+This repo owns its own weekly schedule and GitHub Actions workflow. Pipeline execution is powered by `CastForge`, which is installed as a dependency at runtime.
 
-- `CastForge` runs the schedule and automation
-- `nitan-podcast` remains the public publishing repo
+The workflow runs on a **self-hosted macOS runner** with three Monday retry windows (6 AM / 12 PM / 6 PM PST). First success publishes the episode; subsequent triggers skip.
 
-The existing workflow uses a self-hosted macOS runner with three Monday retry windows. It publishes to `docs/episodes/`, updates `docs/feed.xml`, and validates the live feed with `scripts/validate_feed.py`.
+Pipeline phases:
+
+1. MCP extract + optional Gemini briefing + export Markdown
+2. NotebookLM Audio Overview + download MP3
+3. GitHub Release (backup) + copy MP3 to `docs/episodes/`
+4. Generate RSS feed + forum post draft
+5. Commit + push (GitHub Pages auto-deploys)
+6. Validate live feed
+
+**Manual trigger:** Actions tab, `weekly-podcast`, Run workflow.
 
 ## Development
 

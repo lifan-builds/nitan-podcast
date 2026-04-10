@@ -43,14 +43,14 @@ If those values drift, Spotify and Apple Podcasts may treat the show as broken o
 
 ## Execution Model
 
-The target operating model is:
+Each show repo owns its own workflow and schedule. CastForge is a framework dependency, not a control plane.
 
-1. `castforge` runs the scheduled job.
-2. The workflow checks out both repos.
-3. `castforge` reads `nitan-podcast/podcast.yaml`.
-4. `castforge` executes the pipeline using the show repo's adapters and templates.
-5. Outputs are written back into the `nitan-podcast` worktree.
-6. `nitan-podcast` is committed and pushed so GitHub Pages continues serving the feed and MP3s.
+1. `nitan-podcast` triggers its own scheduled workflow.
+2. The workflow installs `castforge` as a pip dependency.
+3. `run_pipeline.py` wires show-specific hooks into the CastForge pipeline.
+4. CastForge executes the pipeline stages using those hooks.
+5. The workflow commits and pushes updated artifacts within `nitan-podcast`.
+6. GitHub Pages continues serving the feed and MP3s.
 
 ## Migration Sequence
 
@@ -67,29 +67,30 @@ The target operating model is:
 - move integration wrappers for Gemini and NotebookLM
 - define a run manifest and artifact contract
 
-### Phase 3: Switch automation ownership
+### Phase 3: Finalize framework dependency
 
-- move the weekly scheduler to `castforge`
-- grant `castforge` permission to push changes into `nitan-podcast`
-- keep `nitan-podcast` as the public publishing repo
+- update `nitan-podcast` workflow to install `castforge` from pip/git
+- keep all scheduling and runner config in `nitan-podcast`
+- `castforge` remains a pure library with no instance-specific automation
 
 ## Initial File Mapping
 
 Move toward `castforge`:
 
-- `run_pipeline.py`
-- `briefing_writer.py`
-- `notebooklm_audio.py`
-- `notebooklm_export.py`
-- reusable parts of `rss_feed.py`
-- `.github/workflows/weekly-export.yml`
-- `scripts/setup_runner.sh`
+- `briefing_writer.py` (generic Gemini briefing)
+- `notebooklm_audio.py` (generic NotebookLM integration)
+- `notebooklm_export.py` (generic Markdown export)
+- generic pipeline orchestration (now `castforge.pipeline`)
 
 Keep in `nitan-podcast`:
 
+- `run_pipeline.py` (thin wrapper wiring hooks into CastForge)
 - `extractor.py`
 - `publisher.py`
+- `rss_feed.py`
 - show-specific RSS defaults and templates
+- `.github/workflows/weekly-export.yml` (schedule + runner)
+- `scripts/setup_runner.sh`
 - `docs/feed.xml`
 - `docs/episodes/`
 - `assets/`

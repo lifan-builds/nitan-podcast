@@ -1,7 +1,11 @@
-# Manual fallback workflow for the public nitan-podcast repo.
+# Weekly podcast pipeline on self-hosted macOS runner.
 #
-# Scheduled automation has moved to the CastForge repo. This workflow remains
-# available as a manual fallback against the public publishing repo.
+# Retry window: 3 cron triggers across Monday (PST). First successful run
+# publishes the episode; subsequent triggers detect the existing GitHub Release
+# and skip (idempotent).
+#
+# Pipeline execution is powered by CastForge (installed as a dependency).
+# This repo owns the schedule, secrets, runner, and published artifacts.
 #
 # Self-hosted runner prerequisites:
 #   - Python 3.10+ venv at .venv/ with requirements.txt installed
@@ -15,6 +19,10 @@
 name: weekly-podcast
 
 on:
+  schedule:
+    - cron: "0 14 * * 1"   # Monday  6 AM PST / 2 PM UTC
+    - cron: "0 20 * * 1"   # Monday 12 PM PST / 8 PM UTC
+    - cron: "0 2 * * 2"    # Monday  6 PM PST / Tue 2 AM UTC
   workflow_dispatch:
     inputs:
       skip_audio:
@@ -77,6 +85,7 @@ jobs:
           if [ ! -x .venv/bin/python ]; then
             python3 -m venv .venv
           fi
+          $PY -m pip install -q git+https://github.com/lifan-builds/castforge.git
           $PY -m pip install -q -r requirements.txt
           if [ -f requirements-integrations.txt ]; then
             $PY -m pip install -q -r requirements-integrations.txt
@@ -128,11 +137,9 @@ jobs:
           if [ -n "${{ inputs.audio_url }}" ]; then
             AUDIO_URL="${{ inputs.audio_url }}"
           elif [ -n "$MP3" ] && [ -f "$MP3" ]; then
-            # Copy to docs/episodes for GitHub Pages hosting (correct audio/mpeg content-type)
             mkdir -p docs/episodes
             cp "$MP3" "$PAGES_MP3"
             AUDIO_URL="$PAGES_URL"
-            # Also upload to GitHub Release as backup
             gh release create "$TAG" "$MP3" \
               --title "泥潭播客 · ${ISO_WEEK}" \
               --notes "RSS: https://lifan-builds.github.io/nitan-podcast/feed.xml" \
