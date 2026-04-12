@@ -45,6 +45,8 @@ def main(argv: list[str] | None = None) -> int:
             remaining.extend(["--output-filename", f"special_category_{known.category}.md"])
         if "--notebooklm-audio-out" not in remaining:
             remaining.extend(["--notebooklm-audio-out", f"releases/special_category_{known.category}.mp3"])
+        if "--audio-url" not in remaining:
+            remaining.extend(["--audio-url", f"https://lifan-builds.github.io/nitan-podcast/episodes/special_category_{known.category}.mp3"])
     elif known.topic:
         os.environ["MCP_EXTRACT_TOOL"] = "discourse_read_topic"
         # We also pass the topic_id natively so we can inject the title later
@@ -57,6 +59,8 @@ def main(argv: list[str] | None = None) -> int:
             remaining.extend(["--output-filename", f"special_topic_{known.topic}.md"])
         if "--notebooklm-audio-out" not in remaining:
             remaining.extend(["--notebooklm-audio-out", f"releases/special_topic_{known.topic}.mp3"])
+        if "--audio-url" not in remaining:
+            remaining.extend(["--audio-url", f"https://lifan-builds.github.io/nitan-podcast/episodes/special_topic_{known.topic}.mp3"])
 
     argv = remaining
 
