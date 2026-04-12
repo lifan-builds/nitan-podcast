@@ -21,6 +21,45 @@ from rss_feed import generate_rss_feed
 
 
 def main(argv: list[str] | None = None) -> int:
+    import argparse
+    import json
+    import os
+    import sys
+
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--topic", type=int, help="Special edition for a specific topic ID")
+    parser.add_argument("--category", type=str, help="Special edition for a specific category")
+    
+    args_to_parse = argv if argv is not None else sys.argv[1:]
+    known, remaining = parser.parse_known_args(args_to_parse)
+
+    if known.category:
+        os.environ["MCP_EXTRACT_TOOL"] = "discourse_search"
+        os.environ["MCP_EXTRACT_TOOL_ARGUMENTS"] = json.dumps({
+            "category": known.category,
+            "order": "likes",
+            "max_results": 7
+        })
+        os.environ["EPISODE_LABEL"] = f"专题报道-{known.category}"
+        if "--output-filename" not in remaining:
+            remaining.extend(["--output-filename", f"special_category_{known.category}.md"])
+        if "--notebooklm-audio-out" not in remaining:
+            remaining.extend(["--notebooklm-audio-out", f"releases/special_category_{known.category}.mp3"])
+    elif known.topic:
+        os.environ["MCP_EXTRACT_TOOL"] = "discourse_read_topic"
+        # We also pass the topic_id natively so we can inject the title later
+        os.environ["MCP_EXTRACT_TOOL_ARGUMENTS"] = json.dumps({
+            "topic_id": known.topic,
+            "post_limit": 50
+        })
+        os.environ["EPISODE_LABEL"] = f"专题报道-话题{known.topic}"
+        if "--output-filename" not in remaining:
+            remaining.extend(["--output-filename", f"special_topic_{known.topic}.md"])
+        if "--notebooklm-audio-out" not in remaining:
+            remaining.extend(["--notebooklm-audio-out", f"releases/special_topic_{known.topic}.mp3"])
+
+    argv = remaining
+
     hooks = PipelineHooks(
         extract_weekly_key_info=extract_weekly_key_info,
         fetch_thread_details=fetch_thread_details,

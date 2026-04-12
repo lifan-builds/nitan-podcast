@@ -10,6 +10,7 @@ Produces:
 from __future__ import annotations
 
 import logging
+import os
 import re
 from datetime import date
 from pathlib import Path
@@ -34,7 +35,9 @@ PODCAST_CATEGORY = "Technology"
 # ---------------------------------------------------------------------------
 
 def current_week_label() -> str:
-    """Return e.g. '2026年第13周'."""
+    """Return e.g. '2026年第13周' or a custom label if EPISODE_LABEL is set."""
+    if custom := os.environ.get("EPISODE_LABEL"):
+        return custom
     iso = date.today().isocalendar()
     return f"{iso.year}年第{iso.week}周"
 

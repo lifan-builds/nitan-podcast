@@ -133,6 +133,13 @@ def tool_result_to_threads(result: types.CallToolResult) -> list[dict[str, Any]]
         return _unwrap_dict_or_list(data)
     except json.JSONDecodeError:
         pass
+        
+    tool_name = os.environ.get(ENV_TOOL, "").strip()
+    if tool_name == "discourse_read_topic":
+        args = _parse_tool_arguments(os.environ.get(ENV_TOOL_ARGS))
+        topic_id = args.get("topic_id", "")
+        return [{"title": f"本期专题：话题 {topic_id}", "url": f"https://www.uscardforum.com/t/topic/{topic_id}", "category": "专题报道", "raw_text": raw}]
+
     return [{"title": "forum_digest", "raw_text": raw}]
 
 
