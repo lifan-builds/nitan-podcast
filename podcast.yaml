@@ -34,6 +34,7 @@ source:
 
 editorial:
   defaultThreadCount: 7
+  categoryVoiceGuide: editorial/category_voice.yaml
   briefingProvider: gemini
   exportFormat: notebooklm_markdown
   audioProvider: notebooklm

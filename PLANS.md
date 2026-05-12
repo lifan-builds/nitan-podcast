@@ -64,7 +64,7 @@ flowchart LR
 - [x] `PODCAST_PLATFORM_LINKS` env var — JSON dict parsed in `run_pipeline.py`, passed as `extra_links` to forum posts
 - [x] **Thread detail fetching** — `discourse_read_topic` MCP calls fetch OP content + replies per thread
 - [x] **Text response parser** — `_parse_topic_text()` handles nitan-MCP's `- Post #N by @user (date)` format
-- [x] **Thread enrichment** — `_enrich_thread()` adds `op_content`, `top_replies` (top 5 by likes), `reply_count`
+- [x] **Thread enrichment** — `_enrich_thread()` adds fuller `op_content`, information-bearing replies, and `reply_count`
 - [x] **Smarter thread selection** — `select_threads()` scores by likes×3 + views×0.01 + posts×2 with category diversity cap
 - [x] **Briefing prompt revamp** — story-driven, community reactions, topic type tags (🔥争议/📦干货/🐑羊毛/📖攻略); temp 0.35→0.5
 - [x] **NotebookLM instructions update** — cite replies ("有老哥分享说…"), highlight controversies, allow host personality

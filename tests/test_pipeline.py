@@ -17,7 +17,7 @@ from extractor import (
     _parse_json_list,
     _parse_tool_arguments,
     _parse_topic_text,
-    _pick_top_replies,
+    _pick_informative_replies,
     select_threads,
     threads_to_source_markdown,
     tool_result_to_threads,
@@ -65,16 +65,31 @@ class TestThreadsToSourceMarkdown:
 
     def test_section_count(self):
         md = threads_to_source_markdown(self.SAMPLE_THREADS)
-        assert "## 线索 1" in md
-        assert "## 线索 2" in md
+        assert "## Story Brief 1" in md
+        assert "## Story Brief 2" in md
         # No extra section
-        assert "## 线索 3" not in md
+        assert "## Story Brief 3" not in md
 
     def test_key_fields_rendered(self):
         md = threads_to_source_markdown(self.SAMPLE_THREADS)
+        assert "### Evidence From Source" in md
         assert "**title**" in md
         assert "**category**" in md
         assert "示例：某酒店卡史高讨论" in md
+
+    def test_fact_first_story_brief_sections(self):
+        md = threads_to_source_markdown(self.SAMPLE_THREADS)
+        assert "### What Happened" in md
+        assert "### Essential Context" in md
+        assert "### Informative Replies" in md
+        assert "### Caveats / Unknowns" in md
+        assert "### Podcast Angle" in md
+        assert "### Editorial Voice" in md
+
+    def test_category_voice_injected(self):
+        md = threads_to_source_markdown(self.SAMPLE_THREADS)
+        assert "technical but conversational" in md
+        assert "practical, cautious, YMMV-aware" in md
 
     def test_list_values_json_encoded(self):
         md = threads_to_source_markdown(self.SAMPLE_THREADS)
@@ -85,11 +100,11 @@ class TestThreadsToSourceMarkdown:
     def test_empty_list_returns_header_only(self):
         md = threads_to_source_markdown([])
         assert "# 美卡论坛" in md
-        assert "## 线索" not in md
+        assert "## Story Brief" not in md
 
     def test_single_thread(self):
         md = threads_to_source_markdown([{"title": "Solo"}])
-        assert "## 线索 1" in md
+        assert "## Story Brief 1" in md
         assert "**title**" in md
         assert "Solo" in md
 
@@ -269,33 +284,32 @@ Link: https://www.uscardforum.com/t/topic/12345"""
         assert _parse_topic_text("# Just a header\nNo posts here.") == []
 
 
-class TestPickTopReplies:
+class TestPickInformativeReplies:
 
     def test_empty_posts(self):
-        assert _pick_top_replies([]) == []
+        assert _pick_informative_replies([]) == []
 
     def test_op_only(self):
-        assert _pick_top_replies([{"text": "OP post"}]) == []
+        assert _pick_informative_replies([{"text": "OP post"}]) == []
 
-    def test_sorts_by_likes(self):
+    def test_filters_reaction_only_replies(self):
         posts = [
             {"text": "OP"},
-            {"text": "reply1", "likes": 5, "username": "a"},
-            {"text": "reply2", "likes": 20, "username": "b"},
-            {"text": "reply3", "likes": 10, "username": "c"},
+            {"text": "牛", "likes": 50, "username": "a"},
+            {"text": "DP: 5/10 实测 Amex 转 CX 比例已经变化，WF 后续加入 1:1，对 MR 用户影响更大。", "likes": 1, "username": "b"},
         ]
-        result = _pick_top_replies(posts, max_replies=2)
-        assert len(result) == 2
-        assert result[0]["username"] == "b"
-        assert result[1]["username"] == "c"
+        result = _pick_informative_replies(posts, max_replies=2)
+        assert len(result) == 1
+        assert "Amex" in result[0]
+        assert "牛" not in result
 
     def test_truncates_long_text(self):
         posts = [
             {"text": "OP"},
-            {"text": "x" * 500, "likes": 1, "username": "u"},
+            {"text": "DP: " + "x" * 1000, "likes": 1, "username": "u"},
         ]
-        result = _pick_top_replies(posts)
-        assert len(result[0]["text"]) <= 300
+        result = _pick_informative_replies(posts)
+        assert len(result[0]) <= 700
 
 
 class TestEnrichThread:
@@ -307,16 +321,16 @@ class TestEnrichThread:
         assert "op_content" in enriched
         assert "OP content" in enriched["op_content"]
 
-    def test_adds_top_replies(self):
+    def test_adds_informative_replies(self):
         thread = {"title": "Test"}
         posts = [
             {"text": "OP", "username": "op"},
-            {"text": "reply1", "likes": 5, "username": "a"},
-            {"text": "reply2", "likes": 10, "username": "b"},
+            {"text": "哈哈哈", "likes": 50, "username": "a"},
+            {"text": "补充一个 DP：5/24 用户申请失败，客服邮件说不符合条款。", "likes": 1, "username": "b"},
         ]
         enriched = _enrich_thread(thread, posts)
-        assert "top_replies" in enriched
-        assert len(enriched["top_replies"]) == 2
+        assert "informative_replies" in enriched
+        assert len(enriched["informative_replies"]) == 1
         assert enriched["reply_count"] == 2
 
     def test_empty_detail(self):
@@ -342,29 +356,28 @@ class TestEnrichedMarkdown:
     def test_renders_op_content(self):
         threads = [{"title": "T", "op_content": "OP摘要内容"}]
         md = threads_to_source_markdown(threads)
-        assert "### 楼主原文摘要" in md
+        assert "### Evidence From Source" in md
         assert "OP摘要内容" in md
 
-    def test_renders_top_replies(self):
+    def test_renders_informative_replies(self):
         threads = [{
             "title": "T",
-            "top_replies": [
-                {"username": "user1", "likes": 10, "text": "好帖"},
-                {"username": "user2", "likes": 5, "text": "同意"},
+            "informative_replies": [
+                "DP: 5/24 用户申请失败，客服邮件说不符合条款。",
+                "补充：这个 offer 只在部分地区可见，YMMV。",
             ],
             "reply_count": 15,
         }]
         md = threads_to_source_markdown(threads)
-        assert "### 精选回复" in md
-        assert "15 条讨论" in md
-        assert "@user1" in md
-        assert "好帖" in md
+        assert "### Informative Replies" in md
+        assert "Fetched discussion count: 15" in md
+        assert "5/24" in md
 
     def test_no_enrichment_still_works(self):
         threads = [{"title": "Basic", "category": "闲聊"}]
         md = threads_to_source_markdown(threads)
-        assert "### 楼主原文摘要" not in md
-        assert "### 精选回复" not in md
+        assert "### Informative Replies" in md
+        assert "No information-bearing replies" in md
         assert "**title**" in md
 
 
@@ -487,8 +500,9 @@ class TestBriefingWriter:
     def test_system_prompt_exists_and_is_chinese(self):
         assert isinstance(SYSTEM_PROMPT, str)
         assert len(SYSTEM_PROMPT) > 50
-        # Contains Chinese characters
-        assert "美卡论坛" in SYSTEM_PROMPT
+        # Contains Chinese and the fact-first briefing contract
+        assert "事实优先" in SYSTEM_PROMPT
+        assert "Story Brief" in SYSTEM_PROMPT
         assert "Markdown" in SYSTEM_PROMPT
 
     def test_raises_without_gemini_api_key(self, monkeypatch: pytest.MonkeyPatch):
@@ -572,7 +586,7 @@ class TestIntegrationSmokeTest:
         # Step 2: convert to source markdown
         md = threads_to_source_markdown(threads)
         assert "# 美卡论坛" in md
-        assert "## 线索 1" in md
+        assert "## Story Brief 1" in md
 
         # Step 3: export
         path = export_for_notebooklm(md, export_dir=tmp_path, filename="smoke.md")
@@ -602,7 +616,7 @@ class TestIntegrationSmokeTest:
         assert out_file.exists()
         content = out_file.read_text(encoding="utf-8")
         assert "美卡论坛" in content
-        assert "线索" in content
+        assert "Story Brief" in content
 
     def test_markdown_input_skips_extraction(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         """--markdown-input should reuse an existing file without MCP extraction."""

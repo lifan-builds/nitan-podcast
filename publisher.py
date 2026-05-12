@@ -60,7 +60,7 @@ def _extract_threads(markdown: str) -> list[dict[str, str]]:
         if m:
             key, val = m.group(1), m.group(2).strip()
             current[key] = val
-        elif line.startswith("## 线索") and current:
+        elif (line.startswith("## 线索") or line.startswith("## Story Brief")) and current:
             threads.append(current)
             current = {}
     if current:

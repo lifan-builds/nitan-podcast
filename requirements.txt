@@ -2,6 +2,7 @@
 python-dotenv==1.2.2
 google-genai==1.69.0
 mcp==1.26.0
+PyYAML==6.0.2
 
 # Subprocess deps for @nitansde/mcp (Cloudflare bypass). Pass this venv's python via:
 # MCP_SERVER_ARGS=["-y","@nitansde/mcp@latest","--python_path","/abs/path/to/.venv/bin/python"]

@@ -1,0 +1,113 @@
+version: 1
+
+default:
+  voice: "fact-first, conversational, lightly witty"
+  lead_with:
+    - "what happened"
+    - "why it matters"
+    - "what the community disagrees about"
+  avoid:
+    - "opening with jokes before context"
+    - "turning every thread into drama"
+    - "inventing expertise not present in the source document"
+
+categories:
+  玩卡:
+    voice: "technical but conversational"
+    lead_with:
+      - "issuer or program mechanics"
+      - "timeline or policy change"
+      - "practical implication for different users"
+    avoid:
+      - "vague drama around complex card mechanics"
+      - "assuming listeners already know the background"
+
+  信用卡:
+    voice: "technical but conversational"
+    lead_with:
+      - "issuer or program mechanics"
+      - "timeline or policy change"
+      - "practical implication for different users"
+    avoid:
+      - "vague drama around complex card mechanics"
+      - "assuming listeners already know the background"
+
+  羊毛:
+    voice: "practical, cautious, YMMV-aware"
+    lead_with:
+      - "what the deal is"
+      - "who it appears to work for"
+      - "expiry, reproducibility, and risk"
+    avoid:
+      - "presenting one data point as guaranteed"
+      - "burying caveats behind excitement"
+
+  搬砖:
+    voice: "process-oriented and grounded"
+    lead_with:
+      - "what method or opportunity is being discussed"
+      - "required effort and constraints"
+      - "what is proven versus speculative"
+    avoid:
+      - "hype without operational detail"
+      - "treating edge-case tactics as broadly safe"
+
+  旅行:
+    voice: "specific, logistical, experience-aware"
+    lead_with:
+      - "route, property, date, or program context"
+      - "availability and booking constraints"
+      - "trade-offs versus cash alternatives"
+    avoid:
+      - "generic travel vibes"
+      - "missing the concrete itinerary or redemption mechanics"
+
+  理财:
+    voice: "careful, skeptical, numbers-first"
+    lead_with:
+      - "numbers and assumptions"
+      - "risk and downside"
+      - "what is anecdotal versus generalizable"
+    avoid:
+      - "financial advice tone"
+      - "overconfident conclusions from forum anecdotes"
+
+  投资:
+    voice: "careful, skeptical, numbers-first"
+    lead_with:
+      - "numbers and assumptions"
+      - "risk and downside"
+      - "what is anecdotal versus generalizable"
+    avoid:
+      - "financial advice tone"
+      - "overconfident conclusions from forum anecdotes"
+
+  情感:
+    voice: "empathetic, restrained, narrative"
+    lead_with:
+      - "the situation"
+      - "the emotional or practical stakes"
+      - "representative disagreement"
+    avoid:
+      - "mocking the original poster"
+      - "treating pain as entertainment"
+
+  性爱:
+    voice: "clean, restrained, boundary-aware"
+    lead_with:
+      - "the situation"
+      - "the disagreement or question being explored"
+      - "what can be said without sensationalizing"
+    avoid:
+      - "explicit detail beyond what is needed for context"
+      - "making private vulnerability feel like spectacle"
+
+  闲聊:
+    voice: "observant and flexible"
+    lead_with:
+      - "why the thread caught attention"
+      - "the core social observation or joke"
+      - "the boundary between fact and vibe"
+    avoid:
+      - "forcing practical takeaways where none exist"
+      - "overselling low-stakes chatter"

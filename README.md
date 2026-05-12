@@ -39,6 +39,7 @@ That is what keeps Spotify and Apple Podcasts from seeing the migration as a bro
 ## What This Repo Owns
 
 - Nitan MCP extraction and thread-selection logic
+- Category voice and Story Brief editorial rules
 - Chinese editorial prompts and podcast/forum copy
 - Podcast metadata and RSS identity
 - `docs/feed.xml` and `docs/episodes/*.mp3`
@@ -127,6 +128,7 @@ Useful docs:
 | ---- | ------- |
 | `run_pipeline.py` | Current CLI orchestrator |
 | `extractor.py` | Nitan MCP extraction + fixture support |
+| `editorial/category_voice.yaml` | Prescriptive category voice guide for Story Briefs |
 | `briefing_writer.py` | Optional Gemini briefing |
 | `notebooklm_export.py` | UTF-8 Markdown export |
 | `notebooklm_audio.py` | NotebookLM upload/generate/download |
