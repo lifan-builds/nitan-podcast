@@ -2,6 +2,8 @@
 
 Weekly Chinese podcast generated from hot discussions on USCardForum.
 
+![Nitan Podcast cover](assets/cover.png)
+
 `Nitan Podcast` is the public show repository: it owns the podcast identity, feed, episode assets, forum post templates, and the Nitan/USCardForum-specific logic behind each episode. The reusable automation is being split into `CastForge`, while this repo remains the canonical home of the show.
 
 **Forum thread:** [【Nitan Podcast】你的每周美卡论坛精华播客](https://www.uscardforum.com/t/topic/494521)
