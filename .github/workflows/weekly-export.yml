@@ -143,7 +143,7 @@ jobs:
             gh release create "$TAG" "$MP3" \
               --title "泥潭播客 · ${ISO_WEEK}" \
               --notes "RSS: https://lifan-builds.github.io/nitan-podcast/feed.xml" \
-              2>/dev/null || true
+              || gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null
           fi
           echo "audio_url=${AUDIO_URL:-}" >> $GITHUB_OUTPUT
 
@@ -178,7 +178,8 @@ jobs:
       - name: Validate live feed
         if: steps.check.outputs.skip != 'true'
         run: |
-          $PY scripts/validate_feed.py --wait-for-deploy 120
+          $PY scripts/validate_feed.py --wait-for-deploy 120 \
+            --expected-audio-url "${{ steps.release.outputs.audio_url }}"
 
       # --- Artifacts ---
       - name: Upload exports

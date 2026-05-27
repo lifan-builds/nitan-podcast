@@ -7,6 +7,7 @@ Usage:
     python scripts/validate_feed.py                          # live feed
     python scripts/validate_feed.py docs/feed.xml            # local file
     python scripts/validate_feed.py --wait-for-deploy 120    # wait up to 120s for Pages deploy
+    python scripts/validate_feed.py --wait-for-deploy 120 --expected-audio-url URL
 """
 
 from __future__ import annotations
@@ -176,6 +177,36 @@ def load_feed(source: str) -> ET.Element:
     return ET.fromstring(data)
 
 
+def _feed_items(root: ET.Element) -> list[ET.Element]:
+    channel = root.find("channel")
+    if channel is None:
+        return []
+    return channel.findall("item")
+
+
+def _newest_audio_url(root: ET.Element) -> str:
+    items = _feed_items(root)
+    if not items:
+        return ""
+    enc = items[0].find("enclosure")
+    if enc is None:
+        return ""
+    return enc.get("url", "")
+
+
+def _newest_enclosure_length(root: ET.Element) -> int:
+    items = _feed_items(root)
+    if not items:
+        return 0
+    enc = items[0].find("enclosure")
+    if enc is None:
+        return 0
+    try:
+        return int(enc.get("length", "0"))
+    except ValueError:
+        return 0
+
+
 def wait_for_deploy(expected_url: str, timeout: int) -> bool:
     """Poll until the audio URL returns 200, or timeout."""
     print(f"\nWaiting up to {timeout}s for GitHub Pages deploy...")
@@ -194,17 +225,42 @@ def wait_for_deploy(expected_url: str, timeout: int) -> bool:
     return False
 
 
+def wait_for_feed_deploy(source: str, timeout: int, expected_audio_url: str = "") -> ET.Element | None:
+    """Poll live RSS until the newest enclosure is deployed and populated."""
+    print(f"\nWaiting up to {timeout}s for feed deploy...")
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            root = load_feed(source)
+            audio_url = _newest_audio_url(root)
+            length = _newest_enclosure_length(root)
+            url_matches = not expected_audio_url or audio_url == expected_audio_url
+            if url_matches and audio_url and length > 0:
+                elapsed = int(time.time() - start)
+                print(f"  Feed deploy detected after {elapsed}s")
+                return root
+        except Exception:
+            pass
+        time.sleep(10)
+    print(f"  Timed out after {timeout}s")
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     args = argv if argv is not None else sys.argv[1:]
 
     source = LIVE_FEED_URL
     check_live = True
     deploy_wait = 0
+    expected_audio_url = ""
 
     i = 0
     while i < len(args):
         if args[i] == "--wait-for-deploy":
             deploy_wait = int(args[i + 1]) if i + 1 < len(args) else 120
+            i += 2
+        elif args[i] == "--expected-audio-url":
+            expected_audio_url = args[i + 1] if i + 1 < len(args) else ""
             i += 2
         elif args[i] == "--local-only":
             check_live = False
@@ -231,13 +287,20 @@ def main(argv: list[str] | None = None) -> int:
     else:
         ok(f"{len(items)} episode(s)")
 
-    # If waiting for deploy, check the newest episode URL first
+    if deploy_wait and source == LIVE_FEED_URL:
+        deployed_root = wait_for_feed_deploy(source, deploy_wait, expected_audio_url)
+        if deployed_root is not None:
+            root = deployed_root
+            channel = root.find("channel")
+            items = channel.findall("item") if channel is not None else []
+        else:
+            warn("Feed deploy not detected; validating the latest fetched feed")
+
+    # If waiting for deploy, check the newest episode URL before item validation.
     if deploy_wait and items:
-        enc = items[0].find("enclosure")
-        if enc is not None:
-            audio_url = enc.get("url", "")
-            if audio_url and not wait_for_deploy(audio_url, deploy_wait):
-                warn("Deploy not detected; live checks may fail")
+        audio_url = expected_audio_url or _newest_audio_url(root)
+        if audio_url and not wait_for_deploy(audio_url, deploy_wait):
+            warn("Audio deploy not detected; live checks may fail")
 
     for item in items:
         validate_item(item, check_live=check_live)
