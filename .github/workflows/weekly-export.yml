@@ -45,6 +45,7 @@ jobs:
         working-directory: ${{ github.workspace }}
     env:
       PY: .venv/bin/python
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
