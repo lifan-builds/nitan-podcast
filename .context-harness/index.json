@@ -1,0 +1,789 @@
+{
+  "schema": 1,
+  "updated_at": "2026-07-06",
+  "source_hash": "273e131c19de33a65ebdde968bf40bbdf3ec4abbccd9b3c7587c795518aa348b",
+  "sources": [
+    {
+      "path": "CONTEXT.md",
+      "sha256": "ea5bd19d97f56e5102a2fd323abd6247a2a445a7484a0982c29e252a1f65a464",
+      "lines": 183
+    },
+    {
+      "path": "NOW.md",
+      "sha256": "1065c885d00b9a1fd17b5b1bbfbf74b30f917ac862e453b0fa5d481838e8c40d",
+      "lines": 15
+    },
+    {
+      "path": "PLAN.md",
+      "sha256": "0b7f5309b644833eddbf98572ae2d5c6ec39b470f7e424c7484ac6c3ceb35091",
+      "lines": 38
+    }
+  ],
+  "cards": [
+    {
+      "id": "ctx-context-project",
+      "title": "CONTEXT.md: Project",
+      "summary": "Nitan Podcast turns USCardForum discussions into short Chinese podcast episodes. This show repo owns identity, RSS, published assets, GitHub Pages hosting, and GitHub Actions scheduling; reusable pipeline stages live...",
+      "source": "CONTEXT.md#project",
+      "source_path": "CONTEXT.md",
+      "kind": "project",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 58,
+      "tags": [
+        "context",
+        "project"
+      ],
+      "read_when": [
+        "working on project"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-project.md",
+      "chunk_path": "",
+      "content_sha256": "33b6994a90900d6d6eac77d2c3cfc601c9d4b1cd7699df056fc5bd175caf0031",
+      "key_facts": [
+        "Nitan Podcast turns USCardForum discussions into short Chinese podcast episodes. This show repo owns identity, RSS, published assets, GitHub Pages hosting, a..."
+      ]
+    },
+    {
+      "id": "ctx-context-structure",
+      "title": "CONTEXT.md: Structure",
+      "summary": "runpipeline.py is the thin CLI that wires show hooks into castforge.pipeline.",
+      "source": "CONTEXT.md#structure",
+      "source_path": "CONTEXT.md",
+      "kind": "context",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 142,
+      "tags": [
+        "context",
+        "structure"
+      ],
+      "read_when": [
+        "working on structure"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-structure.md",
+      "chunk_path": "",
+      "content_sha256": "1256695194ba858a83824ffdab9b9560241bc2814dbf455f0849a04092f09919",
+      "key_facts": [
+        "runpipeline.py is the thin CLI that wires show hooks into castforge.pipeline.",
+        "extractor.py fetches forum data through nitan-MCP and selects/enriches threads.",
+        "publisher.py creates episode metadata and forum post/reply Markdown.",
+        "rssfeed.py writes the public podcast RSS feed under docs/feed.xml.",
+        ".github/workflows/weekly-export.yml runs the scheduled self-hosted macOS automation."
+      ]
+    },
+    {
+      "id": "ctx-context-operating-constraints",
+      "title": "CONTEXT.md: Operating Constraints",
+      "summary": "NotebookLM is the audio engine; Python prepares sources and publication artifacts.",
+      "source": "CONTEXT.md#operating-constraints",
+      "source_path": "CONTEXT.md",
+      "kind": "constraints",
+      "scope": "project",
+      "importance": 0.9,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 115,
+      "tags": [
+        "context",
+        "operating-constraints",
+        "constraints"
+      ],
+      "read_when": [
+        "before planning or editing",
+        "checking project constraints",
+        "update context safely"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-operating-constraints.md",
+      "chunk_path": "",
+      "content_sha256": "e87097d3899d206bfee1e3e28385d53f26c0984a74f43628059cebd538926ebe",
+      "key_facts": [
+        "NotebookLM is the audio engine; Python prepares sources and publication artifacts.",
+        "Preserve the subscriber contract in publiccontract.py and tests/testpubliccontract.py.",
+        "Use UTF-8 for file I/O.",
+        "Keep secrets in environment variables only; never commit .env.",
+        "Preserve structured threads: list[dict] data through the pipeline instead of regex re-parsing when available."
+      ]
+    },
+    {
+      "id": "ctx-context-workflow",
+      "title": "CONTEXT.md: Workflow",
+      "summary": "Local setup: copy .env.example to .env, configure MCP, optional Gemini, and NotebookLM variables.",
+      "source": "CONTEXT.md#workflow",
+      "source_path": "CONTEXT.md",
+      "kind": "workflow",
+      "scope": "project",
+      "importance": 0.9,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 137,
+      "tags": [
+        "context",
+        "workflow"
+      ],
+      "read_when": [
+        "running, testing, linting, deploying, deployment, or verifying changes"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-workflow.md",
+      "chunk_path": "",
+      "content_sha256": "5da229750c8a28ee283d916a07ec75934e9d63ca1689f7abdaa5336b5ce1eddc",
+      "key_facts": [
+        "Local setup: copy .env.example to .env, configure MCP, optional Gemini, and NotebookLM variables.",
+        "CastForge is expected from a sibling ../castforge checkout or pip install -e ../castforge.",
+        "Main run: python runpipeline.py, with flags such as --dated, --publish-notebooklm, --generate-post, and --generate-rss.",
+        "Offline tests: pytest tests/ -v.",
+        "Fixture smoke: EXTRACTIONFIXTUREPATH=fixtures/sampleextraction.json python runpipeline.py --skip-briefing --dated."
+      ]
+    },
+    {
+      "id": "ctx-context-language",
+      "title": "CONTEXT.md: Language",
+      "summary": "Story Brief:",
+      "source": "CONTEXT.md#language",
+      "source_path": "CONTEXT.md",
+      "kind": "language",
+      "scope": "project",
+      "importance": 0.82,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 236,
+      "tags": [
+        "context",
+        "language"
+      ],
+      "read_when": [
+        "using project terms or resolving naming ambiguity",
+        "update context terminology"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-language.md",
+      "chunk_path": "",
+      "content_sha256": "6b14628d894f45fbb59c047e07a6f701b174f237bd252894603f694fb7636ab1",
+      "key_facts": [
+        "Story Brief:",
+        "A source-grounded mini-brief for one forum thread that establishes facts, stakes, representative replies, caveats, and only then a podcast angle.",
+        "Avoid: AI riff, title summary, hot-take segment",
+        "Source Document:",
+        "The NotebookLM-facing Markdown that carries canonical Story Briefs for an episode."
+      ]
+    },
+    {
+      "id": "ctx-context-relationships",
+      "title": "CONTEXT.md: Relationships",
+      "summary": "AGENTS.md is the small activation layer; CONTEXT.md is the durable source of truth, indexed by scripts/context-index.js.",
+      "source": "CONTEXT.md#relationships",
+      "source_path": "CONTEXT.md",
+      "kind": "invariant",
+      "scope": "project",
+      "importance": 0.82,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 184,
+      "tags": [
+        "context",
+        "relationships",
+        "invariant"
+      ],
+      "read_when": [
+        "changing architecture or domain relationships",
+        "update context invariants"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-relationships.md",
+      "chunk_path": "",
+      "content_sha256": "8726973395623fe94cd5bdeced78812080e6c05e5e91c987e01b1f0edf84594b",
+      "key_facts": [
+        "AGENTS.md is the small activation layer; CONTEXT.md is the durable source of truth, indexed by scripts/context-index.js.",
+        "An Episode contains one or more Story Briefs.",
+        "A Story Brief is based on exactly one forum thread.",
+        "A Story Brief treats commentary as secondary to factual setup.",
+        "A Story Brief must establish Evidence From Source before interpreting community reaction."
+      ]
+    },
+    {
+      "id": "ctx-context-example-dialogue",
+      "title": "CONTEXT.md: Example Dialogue",
+      "summary": "> Dev: \"Should the hosts open a thread segment with jokes from the replies?\"",
+      "source": "CONTEXT.md#example-dialogue",
+      "source_path": "CONTEXT.md",
+      "kind": "context",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 60,
+      "tags": [
+        "context",
+        "example-dialogue"
+      ],
+      "read_when": [
+        "working on example dialogue"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-example-dialogue.md",
+      "chunk_path": "",
+      "content_sha256": "1429d1cc8147a3878a45cdf6d6948292993a154113dcf7f663d5a683b0d26862",
+      "key_facts": [
+        "> Dev: \"Should the hosts open a thread segment with jokes from the replies?\"",
+        "> Domain expert: \"No. First make the Story Brief clear enough for someone who never opened the thread, then use replies for color and disagreement.\""
+      ]
+    },
+    {
+      "id": "ctx-context-flagged-ambiguities",
+      "title": "CONTEXT.md: Flagged Ambiguities",
+      "summary": "\"Review feedback\" identified a conflict between factual digest and commentary-first entertainment; resolved: the default episode promise is source-grounded Story Briefs with light banter.",
+      "source": "CONTEXT.md#flagged-ambiguities",
+      "source_path": "CONTEXT.md",
+      "kind": "context",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 258,
+      "tags": [
+        "context",
+        "flagged-ambiguities"
+      ],
+      "read_when": [
+        "working on flagged ambiguities"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-flagged-ambiguities.md",
+      "chunk_path": "",
+      "content_sha256": "d7b46fc25170577ab1b0a3f0660410c542217ef4ae1c17f0fbc732fa6bff6259",
+      "key_facts": [
+        "\"Review feedback\" identified a conflict between factual digest and commentary-first entertainment; resolved: the default episode promise is source-grounded S...",
+        "Factual grounding belongs in the Source Document, not only in Gemini or NotebookLM prompting.",
+        "Category tone is prescriptive: Nitan can inform the Category Voice Guide, but the show owns the editorial voice.",
+        "The Category Voice Guide is a reviewed show artifact, not an environment-only prompt tweak.",
+        "A Source Document includes the default voice once and injects only the relevant category note for each Story Brief."
+      ]
+    },
+    {
+      "id": "ctx-context-learned-patterns",
+      "title": "CONTEXT.md: Learned Patterns",
+      "summary": "GitHub Pages serves MP3 assets with the correct audio/mpeg MIME type; GitHub Releases served assets as application/octet-stream and broke Apple Podcasts ingestion.",
+      "source": "CONTEXT.md#learned-patterns",
+      "source_path": "CONTEXT.md",
+      "kind": "lesson",
+      "scope": "project",
+      "importance": 0.78,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 148,
+      "tags": [
+        "context",
+        "learned-patterns",
+        "lesson"
+      ],
+      "read_when": [
+        "avoiding repeated mistakes or applying prior corrections",
+        "update context with durable lessons"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-learned-patterns.md",
+      "chunk_path": "",
+      "content_sha256": "fca03ac0dbdb18e887e15ac60e60d78ceafe2522b3915cee20040f414dc390a1",
+      "key_facts": [
+        "GitHub Pages serves MP3 assets with the correct audio/mpeg MIME type; GitHub Releases served assets as application/octet-stream and broke Apple Podcasts inge...",
+        "NotebookLM length is controlled by NOTEBOOKLMAUDIOLENGTH plus thread count more reliably than natural-language duration instructions.",
+        "notebooklm login creates Playwright storage under ~/.notebooklm/storagestate.json; a normal Chrome sign-in is not enough for automation.",
+        "nitan-MCP discoursereadtopic returns formatted text, not JSON, so topic detail parsing needs the custom parser in extractor.py."
+      ]
+    },
+    {
+      "id": "ctx-context-imported-agent-notes",
+      "title": "CONTEXT.md: Imported Agent Notes",
+      "summary": "Context for Imported Agent Notes.",
+      "source": "CONTEXT.md#imported-agent-notes",
+      "source_path": "CONTEXT.md",
+      "kind": "context",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 47,
+      "tags": [
+        "context",
+        "imported-agent-notes"
+      ],
+      "read_when": [
+        "working on imported agent notes"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-imported-agent-notes.md",
+      "chunk_path": "",
+      "content_sha256": "d89f4529fbef759041d6a3ca64cf9556545f88438b3eda38ac401500e7b0dc54",
+      "key_facts": []
+    },
+    {
+      "id": "ctx-context-context-contract",
+      "title": "CONTEXT.md: Context Contract",
+      "summary": "At session start/resume, read NOW.md first, then use the Context Index",
+      "source": "CONTEXT.md#context-contract",
+      "source_path": "CONTEXT.md",
+      "kind": "context",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 145,
+      "tags": [
+        "context",
+        "context-contract"
+      ],
+      "read_when": [
+        "working on context contract"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-context-contract.md",
+      "chunk_path": "",
+      "content_sha256": "a5626a4d14d49789d5bf128600487ef960ba23da6e9e9762d22dea9c62a4fa90",
+      "key_facts": [
+        "At session start/resume, read NOW.md first, then use the Context Index",
+        "below to choose relevant CONTEXT.md sections.",
+        "Before planning or editing, respect CONTEXT.md ## Rules.",
+        "If the user teaches a durable term, invariant, workflow, constraint, or",
+        "correction, update CONTEXT.md before it scrolls away."
+      ]
+    },
+    {
+      "id": "ctx-context-project-overview",
+      "title": "CONTEXT.md: Project Overview",
+      "summary": "NotebookLM is the key solution for podcast audio. Python pipeline extracts weekly hot threads from [uscardforum.com](https://uscardforum.com) via nitan-MCP, optionally refines with Gemini, and exports UTF-8 Markdown....",
+      "source": "CONTEXT.md#project-overview",
+      "source_path": "CONTEXT.md",
+      "kind": "project",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 203,
+      "tags": [
+        "context",
+        "project-overview",
+        "project"
+      ],
+      "read_when": [
+        "working on project overview"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-project-overview.md",
+      "chunk_path": "",
+      "content_sha256": "d41e5a8a78d538427118b6c13bcea1d6033c7ff8258e209b1d3b36654e4db36e",
+      "key_facts": [
+        "NotebookLM is the key solution for podcast audio. Python pipeline extracts weekly hot threads from [uscardforum.com](https://uscardforum.com) via nitan-MCP,...",
+        "This repository is the Nitan Podcast show repo: it owns identity, RSS, published assets, and GitHub Actions scheduling. Reusable pipeline stages live in [Cas...",
+        "Automation runs on a self-hosted macOS runner (GitHub Actions) with 3 retry windows on Mondays. notebooklm login session required for audio generation."
+      ]
+    },
+    {
+      "id": "ctx-context-tech-stack",
+      "title": "CONTEXT.md: Tech Stack",
+      "summary": "| Layer | Choice |",
+      "source": "CONTEXT.md#tech-stack",
+      "source_path": "CONTEXT.md",
+      "kind": "context",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 166,
+      "tags": [
+        "context",
+        "tech-stack"
+      ],
+      "read_when": [
+        "working on tech stack"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-tech-stack.md",
+      "chunk_path": "",
+      "content_sha256": "4301981d4421d4668e9c959e48991f22e4dfc513c37d9e6bed8297e81ee24d11",
+      "key_facts": [
+        "| Layer | Choice |",
+        "| ----- | ------ |",
+        "| Pipeline framework | [CastForge](https://github.com/lifan-builds/castforge) — orchestration, briefing, export, NotebookLM helpers |",
+        "| Podcast engine | Google NotebookLM (Audio Overview); optional [notebooklm-py](https://github.com/teng-lin/notebooklm-py) |",
+        "| Runtime | Python 3.10+ |"
+      ]
+    },
+    {
+      "id": "ctx-context-project-structure",
+      "title": "CONTEXT.md: Project Structure",
+      "summary": "| Path | Role |",
+      "source": "CONTEXT.md#project-structure",
+      "source_path": "CONTEXT.md",
+      "kind": "project",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 361,
+      "tags": [
+        "context",
+        "project-structure",
+        "project"
+      ],
+      "read_when": [
+        "working on project structure"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-project-structure.md",
+      "chunk_path": "",
+      "content_sha256": "f859d27b2c878b93c1a9dd4ba72cbf75d729b44450303bbba8753ab47565aad5",
+      "key_facts": [
+        "| Path | Role |",
+        "| ---- | ---- |",
+        "| runpipeline.py | Thin CLI: wires show hooks into castforge.pipeline |",
+        "| castforge.py | Resolves CastForge import (sibling checkout or venv install) |",
+        "| publiccontract.py | Stable public feed/episode URLs and GUID prefix — do not break subscribers |"
+      ]
+    },
+    {
+      "id": "ctx-context-development-workflow",
+      "title": "CONTEXT.md: Development Workflow",
+      "summary": "Copy .env.example → .env; configure MCP + optional GEMINIAPIKEY + NOTEBOOKLM.",
+      "source": "CONTEXT.md#development-workflow",
+      "source_path": "CONTEXT.md",
+      "kind": "workflow",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 147,
+      "tags": [
+        "context",
+        "development-workflow",
+        "workflow"
+      ],
+      "read_when": [
+        "working on development workflow"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-development-workflow.md",
+      "chunk_path": "",
+      "content_sha256": "712b70b77cefb03b334c8f18e60e406ef6e2d4f72beecbff11bc301bd2ab6f00",
+      "key_facts": [
+        "Copy .env.example → .env; configure MCP + optional GEMINIAPIKEY + NOTEBOOKLM.",
+        "For local dev without a pip-installed CastForge, keep a sibling checkout at ../castforge or install with pip install -e ../castforge.",
+        "python runpipeline.py (add --dated, --publish-notebooklm, --generate-post, --generate-rss as needed).",
+        "Tests: pytest tests/ -v (offline, sub-second). Smoke: EXTRACTIONFIXTUREPATH=fixtures/sampleextraction.json python runpipeline.py --skip-briefing --dated.",
+        "Feed check: python scripts/validatefeed.py (local) or live URL."
+      ]
+    },
+    {
+      "id": "ctx-context-coding-conventions",
+      "title": "CONTEXT.md: Coding Conventions",
+      "summary": "NotebookLM-first — Python serves sources, NotebookLM serves audio.",
+      "source": "CONTEXT.md#coding-conventions",
+      "source_path": "CONTEXT.md",
+      "kind": "context",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 120,
+      "tags": [
+        "context",
+        "coding-conventions"
+      ],
+      "read_when": [
+        "working on coding conventions"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-coding-conventions.md",
+      "chunk_path": "",
+      "content_sha256": "5916bccdb13232f4cc2eb99e24b10b81dff04dbff5909cdc2d35fe67a0f1fefb",
+      "key_facts": [
+        "NotebookLM-first — Python serves sources, NotebookLM serves audio.",
+        "UTF-8 everywhere — encoding=\"utf-8\" on all file I/O.",
+        "Secrets — env vars only; never commit .env.",
+        "Structured data passthrough — pass threads: list[dict] through the pipeline; avoid regex re-parsing when threads are available.",
+        "Lazy imports — rssfeed and CastForge audio path stay lazy where the CLI already did; compatibility modules import CastForge on load (lightweight)."
+      ]
+    },
+    {
+      "id": "ctx-context-architecture-decisions",
+      "title": "CONTEXT.md: Architecture Decisions",
+      "summary": "CastForge = framework — show repos own schedule, runner, secrets, and published URLs; CastForge provides reusable stages.",
+      "source": "CONTEXT.md#architecture-decisions",
+      "source_path": "CONTEXT.md",
+      "kind": "context",
+      "scope": "project",
+      "importance": 0.65,
+      "confidence": "confirmed",
+      "recency": "2026-07-06",
+      "tokens_est": 293,
+      "tags": [
+        "context",
+        "architecture-decisions"
+      ],
+      "read_when": [
+        "working on architecture decisions"
+      ],
+      "card_path": ".context-harness/cards/ctx-context-architecture-decisions.md",
+      "chunk_path": "",
+      "content_sha256": "6015b70d8f6d6e5348d86a1cef3c1fb4d23ef6378dbdb8aac8098d4811ae757a",
+      "key_facts": [
+        "CastForge = framework — show repos own schedule, runner, secrets, and published URLs; CastForge provides reusable stages.",
+        "NotebookLM = audio engine — single place for spoken 简体中文 output.",
+        "Audio hosting: GitHub Pages — serves audio/mpeg; Releases kept as backup (serves application/octet-stream which broke Apple Podcasts).",
+        "Podcast tuning — NOTEBOOKLMAUDIOLENGTH=short + 7 threads + \"点到为止\" → ~6 min episodes.",
+        "Publication — announcement thread + weekly replies on 美卡论坛; publisher.py generates both."
+      ]
+    },
+    {
+      "id": "ctx-now-now",
+      "title": "NOW.md: Now",
+      "summary": "Fixed and verified recent GitHub Actions weekly podcast failures.",
+      "source": "NOW.md#now",
+      "source_path": "NOW.md",
+      "kind": "resume",
+      "scope": "task",
+      "importance": 0.95,
+      "confidence": "confirmed",
+      "recency": "2026-06-26",
+      "tokens_est": 114,
+      "tags": [
+        "now",
+        "resume"
+      ],
+      "read_when": [
+        "resuming the current session",
+        "choosing the immediate next step",
+        "update context after current work"
+      ],
+      "card_path": ".context-harness/cards/ctx-now-now.md",
+      "chunk_path": "",
+      "content_sha256": "1065c885d00b9a1fd17b5b1bbfbf74b30f917ac862e453b0fa5d481838e8c40d",
+      "key_facts": [
+        "Fixed and verified recent GitHub Actions weekly podcast failures.",
+        "None for the weekly workflow; W26 published successfully.",
+        "Context-harness refresh files remain local and uncommitted.",
+        "Decide separately whether to commit the context-harness refresh files.",
+        "Last modified: 2026-06-26T17:31:29.912Z"
+      ]
+    },
+    {
+      "id": "ctx-plan-goal",
+      "title": "PLAN.md: Goal",
+      "summary": "Keep active task state separate from durable project context.",
+      "source": "PLAN.md#goal",
+      "source_path": "PLAN.md",
+      "kind": "plan",
+      "scope": "task",
+      "importance": 0.85,
+      "confidence": "confirmed",
+      "recency": "2026-06-26",
+      "tokens_est": 16,
+      "tags": [
+        "plan",
+        "goal"
+      ],
+      "read_when": [
+        "continuing the active task",
+        "checking done criteria or decisions",
+        "update context with task-local progress"
+      ],
+      "card_path": ".context-harness/cards/ctx-plan-goal.md",
+      "chunk_path": "",
+      "content_sha256": "3fb8073e365da9c8609d22a65aa54f8c731cc09fa9f49d0d3aa72d725dcb9c94",
+      "key_facts": [
+        "Keep active task state separate from durable project context."
+      ]
+    },
+    {
+      "id": "ctx-plan-progress",
+      "title": "PLAN.md: Progress",
+      "summary": "[x] Archived oversized NOW.md during context-harness v3 migration.",
+      "source": "PLAN.md#progress",
+      "source_path": "PLAN.md",
+      "kind": "plan",
+      "scope": "task",
+      "importance": 0.85,
+      "confidence": "confirmed",
+      "recency": "2026-06-26",
+      "tokens_est": 17,
+      "tags": [
+        "plan",
+        "progress"
+      ],
+      "read_when": [
+        "continuing the active task",
+        "checking done criteria or decisions",
+        "update context with task-local progress"
+      ],
+      "card_path": ".context-harness/cards/ctx-plan-progress.md",
+      "chunk_path": "",
+      "content_sha256": "20453769cea9918adf411787ade5ae9d1144859cd92f864ca9de5eba87f7bfa2",
+      "key_facts": [
+        "[x] Archived oversized NOW.md during context-harness v3 migration."
+      ]
+    },
+    {
+      "id": "ctx-plan-verification",
+      "title": "PLAN.md: Verification",
+      "summary": "Run node scripts/context-index.js check.",
+      "source": "PLAN.md#verification",
+      "source_path": "PLAN.md",
+      "kind": "plan",
+      "scope": "task",
+      "importance": 0.85,
+      "confidence": "confirmed",
+      "recency": "2026-06-26",
+      "tokens_est": 11,
+      "tags": [
+        "plan",
+        "verification"
+      ],
+      "read_when": [
+        "continuing the active task",
+        "checking done criteria or decisions",
+        "update context with task-local progress"
+      ],
+      "card_path": ".context-harness/cards/ctx-plan-verification.md",
+      "chunk_path": "",
+      "content_sha256": "fc995a408462e18cfff3259020ead21185ec55880f783fadaaf7e0d1c21ec5cd",
+      "key_facts": [
+        "Run node scripts/context-index.js check."
+      ]
+    },
+    {
+      "id": "ctx-plan-archive",
+      "title": "PLAN.md: Archive",
+      "summary": "Context for Archive.",
+      "source": "PLAN.md#archive",
+      "source_path": "PLAN.md",
+      "kind": "plan",
+      "scope": "task",
+      "importance": 0.85,
+      "confidence": "confirmed",
+      "recency": "2026-06-26",
+      "tokens_est": 15,
+      "tags": [
+        "plan",
+        "archive",
+        "2026-06-26-oversized-now-md-snapshot"
+      ],
+      "read_when": [
+        "continuing the active task",
+        "checking done criteria or decisions",
+        "update context with task-local progress"
+      ],
+      "card_path": ".context-harness/cards/ctx-plan-archive.md",
+      "chunk_path": "",
+      "content_sha256": "86b5dce1d88b1dd856951c459446c7b3639425a3110e1afdc39d7674c6835b79",
+      "key_facts": []
+    },
+    {
+      "id": "ctx-plan-current-focus",
+      "title": "PLAN.md: Current Focus",
+      "summary": "Fixed and verified recent GitHub Actions weekly podcast failures.",
+      "source": "PLAN.md#current-focus",
+      "source_path": "PLAN.md",
+      "kind": "plan",
+      "scope": "task",
+      "importance": 0.85,
+      "confidence": "confirmed",
+      "recency": "2026-06-26",
+      "tokens_est": 17,
+      "tags": [
+        "plan",
+        "current-focus"
+      ],
+      "read_when": [
+        "continuing the active task",
+        "checking done criteria or decisions",
+        "update context with task-local progress"
+      ],
+      "card_path": ".context-harness/cards/ctx-plan-current-focus.md",
+      "chunk_path": "",
+      "content_sha256": "4e8b31662593916b586bbcfa70210324ba1adf93f861c85f992ebde312228031",
+      "key_facts": [
+        "Fixed and verified recent GitHub Actions weekly podcast failures."
+      ]
+    },
+    {
+      "id": "ctx-plan-active-blockers",
+      "title": "PLAN.md: Active Blockers",
+      "summary": "None for the weekly workflow; W26 published successfully.",
+      "source": "PLAN.md#active-blockers",
+      "source_path": "PLAN.md",
+      "kind": "plan",
+      "scope": "task",
+      "importance": 0.85,
+      "confidence": "confirmed",
+      "recency": "2026-06-26",
+      "tokens_est": 31,
+      "tags": [
+        "plan",
+        "active-blockers"
+      ],
+      "read_when": [
+        "continuing the active task",
+        "checking done criteria or decisions",
+        "update context with task-local progress"
+      ],
+      "card_path": ".context-harness/cards/ctx-plan-active-blockers.md",
+      "chunk_path": "",
+      "content_sha256": "12c677e61e47d9a8d6111fe85822376dacb7b4eda628214bde324ae7f7bf5bd4",
+      "key_facts": [
+        "None for the weekly workflow; W26 published successfully.",
+        "Context-harness refresh files remain local and uncommitted."
+      ]
+    },
+    {
+      "id": "ctx-plan-immediate-next-step",
+      "title": "PLAN.md: Immediate Next Step",
+      "summary": "Decide separately whether to commit the context-harness refresh files.",
+      "source": "PLAN.md#immediate-next-step",
+      "source_path": "PLAN.md",
+      "kind": "plan",
+      "scope": "task",
+      "importance": 0.85,
+      "confidence": "confirmed",
+      "recency": "2026-06-26",
+      "tokens_est": 18,
+      "tags": [
+        "plan",
+        "immediate-next-step"
+      ],
+      "read_when": [
+        "continuing the active task",
+        "checking done criteria or decisions",
+        "update context with task-local progress"
+      ],
+      "card_path": ".context-harness/cards/ctx-plan-immediate-next-step.md",
+      "chunk_path": "",
+      "content_sha256": "dd9639f2df04fac9577eb731ae9f6e78e9ca7c66c55a07939c1362cde9b139b0",
+      "key_facts": [
+        "Decide separately whether to commit the context-harness refresh files."
+      ]
+    },
+    {
+      "id": "ctx-plan-session-state",
+      "title": "PLAN.md: Session State",
+      "summary": "Last modified: 2026-06-22",
+      "source": "PLAN.md#session-state",
+      "source_path": "PLAN.md",
+      "kind": "plan",
+      "scope": "task",
+      "importance": 0.85,
+      "confidence": "confirmed",
+      "recency": "2026-06-26",
+      "tokens_est": 165,
+      "tags": [
+        "plan",
+        "session-state"
+      ],
+      "read_when": [
+        "continuing the active task",
+        "checking done criteria or decisions",
+        "update context with task-local progress"
+      ],
+      "card_path": ".context-harness/cards/ctx-plan-session-state.md",
+      "chunk_path": "",
+      "content_sha256": "34584cd284517d31a7de5ceba38ef665360d79a29c40ea9ccc06306a031a147f",
+      "key_facts": [
+        "Last modified: 2026-06-22",
+        "Files touched: .github/workflows/weekly-export.yml, docs/feed.xml, docs/episodes/weeklymeika2026-W26.mp3, AGENTS.md, CONTEXT.md, NOW.md, scripts/context-inde...",
+        "Finding: completed recent jobs generated NotebookLM audio successfully but failed in Create GitHub Release with HTTP 401: Requires authentication.",
+        "Fix: committed and pushed b2c7fb6 adding GHTOKEN: ${{ github.token }} to the workflow job env.",
+        "Verification: manual workflow run 27985479991 completed successfully and created release v2026-W26; workflow commit 217c39a published the feed and MP3."
+      ]
+    }
+  ]
+}

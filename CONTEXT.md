@@ -17,7 +17,7 @@ Nitan Podcast turns USCardForum discussions into short Chinese podcast episodes.
 - `docs/episodes/` holds GitHub Pages-served MP3 episode assets.
 - `tests/` contains offline pytest coverage for pipeline, publisher, RSS, and public contracts.
 
-## Rules
+## Operating Constraints
 
 - NotebookLM is the audio engine; Python prepares sources and publication artifacts.
 - Preserve the subscriber contract in `public_contract.py` and `tests/test_public_contract.py`.
