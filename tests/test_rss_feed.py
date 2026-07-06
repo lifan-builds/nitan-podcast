@@ -250,3 +250,59 @@ class TestGenerateRssFeed:
         # Newest should be first (not the 2025 seed item)
         first_guid = items[0].find("guid").text
         assert not first_guid.startswith("nitan-podcast-2025")
+
+
+# ---------------------------------------------------------------------------
+# scripts.validate_feed
+# ---------------------------------------------------------------------------
+
+class TestValidateFeed:
+
+    def _make_feed(self, tmp_path: Path) -> Path:
+        config = _podcast_config()
+        rss, channel = _build_channel(config)
+        channel.append(_build_item(
+            title="New", description="New", audio_url="https://example.com/new.mp3",
+            guid="new", pub_date=datetime(2026, 7, 6, tzinfo=timezone.utc), file_size=12345,
+        ))
+        channel.append(_build_item(
+            title="Old", description="Old", audio_url="https://example.com/old.mp3",
+            guid="old", pub_date=datetime(2026, 6, 29, tzinfo=timezone.utc), file_size=12345,
+        ))
+        ET.indent(rss)
+        feed = tmp_path / "feed.xml"
+        ET.ElementTree(rss).write(feed, xml_declaration=True, encoding="unicode")
+        return feed
+
+    def test_expected_audio_failure_is_hard_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        from scripts import validate_feed
+
+        feed = self._make_feed(tmp_path)
+        validate_feed.errors.clear()
+        validate_feed.warnings.clear()
+        monkeypatch.setattr(validate_feed, "load_feed", lambda source: ET.parse(feed).getroot())
+        monkeypatch.setattr(validate_feed, "_curl_head", lambda url: {"_status": "503"})
+
+        assert validate_feed.main(["https://example.com/feed.xml", "--expected-audio-url", "https://example.com/new.mp3"]) == 1
+        assert any("HTTP 503" in error for error in validate_feed.errors)
+
+    def test_old_audio_failure_is_warning_when_expected_audio_is_valid(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ):
+        from scripts import validate_feed
+
+        feed = self._make_feed(tmp_path)
+        validate_feed.errors.clear()
+        validate_feed.warnings.clear()
+
+        def fake_curl_head(url: str) -> dict[str, str]:
+            if url == "https://example.com/old.mp3":
+                return {"_status": "503"}
+            return {"_status": "200", "content-type": "audio/mp3", "content-length": "12345"}
+
+        monkeypatch.setattr(validate_feed, "load_feed", lambda source: ET.parse(feed).getroot())
+        monkeypatch.setattr(validate_feed, "_curl_head", fake_curl_head)
+
+        assert validate_feed.main(["https://example.com/feed.xml", "--expected-audio-url", "https://example.com/new.mp3"]) == 0
+        assert not validate_feed.errors
+        assert any("HTTP 503" in warning for warning in validate_feed.warnings)

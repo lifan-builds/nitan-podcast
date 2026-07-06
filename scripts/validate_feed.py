@@ -89,7 +89,7 @@ def _curl_fetch(url: str) -> bytes:
     return result.stdout
 
 
-def validate_item(item: ET.Element, check_live: bool = True) -> None:
+def validate_item(item: ET.Element, check_live: bool = True, required_live_url: str = "") -> None:
     """Validate a single <item> episode entry."""
     title_el = item.find("title")
     title = (title_el.text or "?") if title_el is not None else "?"
@@ -141,16 +141,24 @@ def validate_item(item: ET.Element, check_live: bool = True) -> None:
     # Live URL check
     if check_live and url:
         print(f"\n[Live check: {url}]")
+        live_required = not required_live_url or url == required_live_url
+
+        def live_issue(msg: str) -> None:
+            if live_required:
+                fail(msg)
+            else:
+                warn(msg)
+
         try:
             hdrs = _curl_head(url)
             status = int(hdrs.get("_status", "0"))
             if status != 200:
-                fail(f"HTTP {status} (expected 200)")
+                live_issue(f"HTTP {status} (expected 200)")
                 return
             ct = hdrs.get("content-type", "")
             cl = hdrs.get("content-length", "0")
             if "audio/mpeg" not in ct and "audio/" not in ct:
-                fail(f"Server content-type = '{ct}' (expected audio/mpeg)")
+                live_issue(f"Server content-type = '{ct}' (expected audio/mpeg)")
             else:
                 ok(f"Server content-type = {ct}")
             if cl and int(cl) > 0:
@@ -160,7 +168,7 @@ def validate_item(item: ET.Element, check_live: bool = True) -> None:
             else:
                 warn(f"Server content-length = {cl}")
         except Exception as e:
-            fail(f"Cannot reach audio URL: {e}")
+            live_issue(f"Cannot reach audio URL: {e}")
 
 
 def load_feed(source: str) -> ET.Element:
@@ -205,6 +213,14 @@ def _newest_enclosure_length(root: ET.Element) -> int:
         return int(enc.get("length", "0"))
     except ValueError:
         return 0
+
+
+def _has_audio_url(items: list[ET.Element], expected_audio_url: str) -> bool:
+    for item in items:
+        enc = item.find("enclosure")
+        if enc is not None and enc.get("url", "") == expected_audio_url:
+            return True
+    return False
 
 
 def wait_for_deploy(expected_url: str, timeout: int) -> bool:
@@ -296,14 +312,17 @@ def main(argv: list[str] | None = None) -> int:
         else:
             warn("Feed deploy not detected; validating the latest fetched feed")
 
+    if expected_audio_url and not _has_audio_url(items, expected_audio_url):
+        fail(f"Expected audio URL not found in feed: {expected_audio_url}")
+
     # If waiting for deploy, check the newest episode URL before item validation.
     if deploy_wait and items:
         audio_url = expected_audio_url or _newest_audio_url(root)
         if audio_url and not wait_for_deploy(audio_url, deploy_wait):
-            warn("Audio deploy not detected; live checks may fail")
+            fail(f"Audio deploy not detected: {audio_url}")
 
     for item in items:
-        validate_item(item, check_live=check_live)
+        validate_item(item, check_live=check_live, required_live_url=expected_audio_url)
 
     print(f"\n{'=' * 40}")
     print(f"RESULT: {len(errors)} error(s), {len(warnings)} warning(s)")
