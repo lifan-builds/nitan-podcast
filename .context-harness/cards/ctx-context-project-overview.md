@@ -22,5 +22,10 @@ NotebookLM is the key solution for podcast audio. Python pipeline extracts weekl
 - This repository is the Nitan Podcast show repo: it owns identity, RSS, published assets, and GitHub Actions scheduling. Reusable pipeline stages live in [Cas...
 - Automation runs on a self-hosted macOS runner (GitHub Actions) with 3 retry windows on Mondays. notebooklm login session required for audio generation.
 
-## Open next
+## Retrieval order
+- Read `NOW.md` and concise `CONTEXT.md` as the always-read layer.
+- Use this card before opening bulky `PLAN.md`, chunks, or raw source sections for this topic.
+- Open raw detail only when this summary is insufficient for the task.
+
+## Open next only if needed
 - `CONTEXT.md#project-overview`

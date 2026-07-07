@@ -24,5 +24,10 @@ GitHub Pages serves MP3 assets with the correct audio/mpeg MIME type; GitHub Rel
 - notebooklm login creates Playwright storage under ~/.notebooklm/storagestate.json; a normal Chrome sign-in is not enough for automation.
 - nitan-MCP discoursereadtopic returns formatted text, not JSON, so topic detail parsing needs the custom parser in extractor.py.
 
-## Open next
+## Retrieval order
+- Read `NOW.md` and concise `CONTEXT.md` as the always-read layer.
+- Use this card before opening bulky `PLAN.md`, chunks, or raw source sections for this topic.
+- Open raw detail only when this summary is insufficient for the task.
+
+## Open next only if needed
 - `CONTEXT.md#learned-patterns`

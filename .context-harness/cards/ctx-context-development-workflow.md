@@ -24,5 +24,10 @@ Copy .env.example → .env; configure MCP + optional GEMINIAPIKEY + NOTEBOOKLM.
 - Tests: pytest tests/ -v (offline, sub-second). Smoke: EXTRACTIONFIXTUREPATH=fixtures/sampleextraction.json python runpipeline.py --skip-briefing --dated.
 - Feed check: python scripts/validatefeed.py (local) or live URL.
 
-## Open next
+## Retrieval order
+- Read `NOW.md` and concise `CONTEXT.md` as the always-read layer.
+- Use this card before opening bulky `PLAN.md`, chunks, or raw source sections for this topic.
+- Open raw detail only when this summary is insufficient for the task.
+
+## Open next only if needed
 - `CONTEXT.md#development-workflow`

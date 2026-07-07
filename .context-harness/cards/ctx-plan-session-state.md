@@ -26,5 +26,10 @@ Last modified: 2026-06-22
 - Fix: committed and pushed b2c7fb6 adding GHTOKEN: ${{ github.token }} to the workflow job env.
 - Verification: manual workflow run 27985479991 completed successfully and created release v2026-W26; workflow commit 217c39a published the feed and MP3.
 
-## Open next
+## Retrieval order
+- Read `NOW.md` and concise `CONTEXT.md` as the always-read layer.
+- Use this card before opening bulky `PLAN.md`, chunks, or raw source sections for this topic.
+- Open raw detail only when this summary is insufficient for the task.
+
+## Open next only if needed
 - `PLAN.md#session-state`
