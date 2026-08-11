@@ -188,6 +188,7 @@ class TestGenerateRssFeed:
         defaults = {
             "audio_url": "https://example.com/episode.mp3",
             "duration": "00:06:00",
+            "file_size": 12345,
         }
         defaults.update(kwargs)
         return generate_rss_feed(md_path, feed_path, **defaults)
@@ -207,6 +208,10 @@ class TestGenerateRssFeed:
         tree = ET.parse(feed)
         items = tree.findall(".//item")
         assert len(items) == 1
+
+    def test_refuses_zero_length_audio(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        with pytest.raises(ValueError, match="positive MP3 file size"):
+            self._run_generate(tmp_path, monkeypatch, file_size=0)
 
     def test_different_episodes_accumulate(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         # First episode

@@ -213,8 +213,8 @@ def generate_rss_feed(
 
     if file_size is None:
         file_size = _detect_file_size(audio_url, mp3_path)
-    if file_size == 0:
-        logger.warning("MP3 file size is 0 — podcast players may refuse to play this episode")
+    if file_size <= 0:
+        raise ValueError("Refusing to publish RSS without a positive MP3 file size")
 
     pub_date = datetime.now(timezone.utc)
 

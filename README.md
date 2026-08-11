@@ -26,6 +26,8 @@ flowchart LR
 | **RSS** | `https://lifan-builds.github.io/nitan-podcast/feed.xml` |
 | **美卡论坛** | [announcement thread](https://www.uscardforum.com/t/topic/494521) |
 
+The [public episode archive](https://lifan-builds.github.io/nitan-podcast/) includes an in-browser player and source notes. See [the 18-episode retrospective](RETROSPECTIVE.md) and [August 2026 baseline](METRICS.md) for what the project learned before the CastForge growth launch.
+
 ## Public Compatibility Contract
 
 The automation may move into `CastForge`, but the subscriber-facing surface of this show must stay stable.

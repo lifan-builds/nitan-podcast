@@ -34,6 +34,8 @@ Nitan MCP topic details require the repository parser because `discourse_read_to
 - An RSS item may be written only after the current episode has a non-empty audio URL backed by either a downloaded MP3 or the explicit `workflow_dispatch.inputs.audio_url` override.
 - An audio-generation failure must fail the job and retain `exports/` as an artifact; it must not create an enclosure with a guessed URL or zero length.
 - `docs/feed.xml`, the committed MP3, and the GitHub Release must describe the same episode URL.
+- RSS generation must reject a non-positive enclosure length instead of warning and continuing.
+- Every committed `docs/episodes/weekly_meika_*.mp3` must have one matching feed enclosure with the same byte length, and every Pages enclosure in the feed must resolve to a committed local MP3.
 
 ### 4. Validation & Error Matrix
 
@@ -43,6 +45,8 @@ Nitan MCP topic details require the repository parser because `discourse_read_to
 | `skip_audio=true`, no override | Export only; do not publish RSS |
 | Explicit `audio_url` | Publish using that URL without requiring NotebookLM output |
 | Empty release audio URL | Refuse publication before writing RSS |
+| Missing MP3 or enclosure length `<= 0` | Raise before feed write; preserve the previous feed |
+| Committed weekly MP3 omitted from feed | Offline public-contract test fails |
 | Valid released audio | Commit feed and episode, then validate the exact expected URL |
 
 ### 5. Good/Base/Bad Cases
@@ -55,6 +59,7 @@ Nitan MCP topic details require the repository parser because `discourse_read_to
 
 - Workflow regression tests must assert that audio errors are not ignored, publication steps require a non-empty released audio URL, and exports use `always()` retention.
 - RSS/public-contract tests must continue asserting positive enclosure lengths and stable URL/GUID shapes.
+- Repository consistency tests must compare committed weekly MP3 filenames and byte lengths to feed enclosures in both directions.
 
 ### 7. Wrong vs Correct
 

@@ -46,6 +46,7 @@ jobs:
     env:
       PY: .venv/bin/python
       GH_TOKEN: ${{ github.token }}
+      NOTEBOOKLM_AUDIO_LANGUAGE: zh
     steps:
       - uses: actions/checkout@v5
         with:
@@ -86,7 +87,7 @@ jobs:
           if [ ! -x .venv/bin/python ]; then
             python3 -m venv .venv
           fi
-          $PY -m pip install -q git+https://github.com/lifan-builds/castforge.git
+          $PY -m pip install -q "castforge @ git+https://github.com/lifan-builds/castforge.git@v0.1.0"
           $PY -m pip install -q -r requirements.txt
           if [ -f requirements-integrations.txt ]; then
             $PY -m pip install -q -r requirements-integrations.txt

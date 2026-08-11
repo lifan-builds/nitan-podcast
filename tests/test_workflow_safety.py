@@ -35,3 +35,12 @@ def test_exports_are_retained_after_a_failure() -> None:
 def test_actions_use_node24_releases() -> None:
     assert "actions/checkout@v5" in WORKFLOW
     assert "actions/upload-artifact@v7" in WORKFLOW
+
+
+def test_nitan_explicitly_requests_chinese_audio() -> None:
+    assert "NOTEBOOKLM_AUDIO_LANGUAGE: zh" in WORKFLOW
+
+
+def test_castforge_install_is_pinned_to_release() -> None:
+    assert "castforge.git@v0.1.0" in WORKFLOW
+    assert "castforge.git\n" not in WORKFLOW

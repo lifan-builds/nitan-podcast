@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Nitan Podcast：每周六分钟，美卡论坛热门讨论精华。" />
+    <title>Nitan Podcast · 泥潭播客</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #10100f;
+        --panel: #191917;
+        --text: #f6f0e5;
+        --muted: #b9b0a2;
+        --accent: #ff6b35;
+        --line: #34312c;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 10% 0%, rgba(255, 107, 53, 0.18), transparent 32rem),
+          var(--bg);
+        color: var(--text);
+        font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      }
+      a { color: inherit; text-underline-offset: 0.2em; }
+      main { width: min(980px, calc(100% - 2rem)); margin: 0 auto; }
+      .hero {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 2rem;
+        align-items: center;
+        min-height: 58vh;
+        padding: 4rem 0 3rem;
+      }
+      .cover { width: 180px; aspect-ratio: 1; border-radius: 24px; box-shadow: 0 20px 60px #0008; }
+      .eyebrow { color: var(--accent); font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+      h1 { margin: 0.2rem 0 0.8rem; font-size: clamp(2.8rem, 8vw, 5.8rem); line-height: 0.95; letter-spacing: -0.055em; }
+      .lede { max-width: 42rem; color: var(--muted); font-size: 1.12rem; }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.5rem; }
+      .button {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.65rem 1rem;
+        background: var(--panel);
+        text-decoration: none;
+        font-weight: 700;
+      }
+      .button.primary { color: #16110e; background: var(--accent); border-color: var(--accent); }
+      .section-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--line); }
+      h2 { margin: 0; padding: 0 0 0.75rem; font-size: 1.6rem; }
+      #episodes { display: grid; gap: 1rem; padding: 1.4rem 0 4rem; }
+      article { padding: 1.2rem; background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line); border-radius: 18px; }
+      article h3 { margin: 0 0 0.25rem; font-size: 1.08rem; }
+      article time { color: var(--muted); font-size: 0.9rem; }
+      audio { width: 100%; margin: 0.9rem 0 0.4rem; }
+      details { color: var(--muted); }
+      .description { white-space: pre-wrap; }
+      .description a { color: var(--text); }
+      .about { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 0 0 4rem; }
+      .about article { min-height: 100%; }
+      footer { padding: 1.5rem 0 3rem; border-top: 1px solid var(--line); color: var(--muted); }
+      @media (max-width: 650px) {
+        .hero { grid-template-columns: 1fr; gap: 1.4rem; padding-top: 2rem; }
+        .cover { width: 120px; border-radius: 18px; }
+        .about { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <img class="cover" src="https://github.com/lifan-builds/nitan-podcast/raw/main/assets/cover.png" alt="Nitan Podcast 封面" />
+        <div>
+          <div class="eyebrow">每周 · 六分钟 · 简体中文</div>
+          <h1>泥潭播客</h1>
+          <p class="lede">把美卡论坛一周的热门讨论整理成短播客：事实先讲清，再听社区里的经验、分歧和意外发现。</p>
+          <nav class="actions" aria-label="订阅与项目链接">
+            <a class="button primary" href="https://podcasts.apple.com/us/podcast/nitan-podcast/id1888784962">Apple Podcasts</a>
+            <a class="button" href="https://open.spotify.com/show/3jjd0ozToYgW7yje7mfYCg">Spotify</a>
+            <a class="button" href="feed.xml">RSS</a>
+            <a class="button" href="https://www.uscardforum.com/t/topic/494521">美卡论坛</a>
+          </nav>
+        </div>
+      </section>
+
+      <section aria-labelledby="episodes-title">
+        <header class="section-head">
+          <h2 id="episodes-title">节目归档</h2>
+          <p id="episode-count" aria-live="polite">读取 RSS…</p>
+        </header>
+        <div id="episodes"></div>
+        <noscript>请在播客客户端中通过 RSS 收听节目。</noscript>
+      </section>
+
+      <section class="about" aria-label="关于项目">
+        <article>
+          <h2>从社区到耳机</h2>
+          <p>节目从热门主题中选择有信息量的原帖和回复，生成可追溯的来源文档，再由 NotebookLM 制作音频。Apple、Spotify 和 RSS 使用同一套稳定的公开地址。</p>
+          <p><a href="https://github.com/lifan-builds/nitan-podcast/blob/main/RETROSPECTIVE.md">阅读 18 期自动化制作复盘 →</a></p>
+        </article>
+        <article>
+          <h2>Powered by CastForge</h2>
+          <p>可复用的编排、音频集成和发布安全机制已经提取为开源 Python 框架 CastForge；本仓库继续拥有泥潭播客的编辑规则、品牌和订阅地址。</p>
+          <p><a href="https://github.com/lifan-builds/castforge">在 GitHub 查看 CastForge →</a></p>
+        </article>
+      </section>
+
+      <footer>
+        <p>Nitan Podcast 是独立社区项目，与美卡论坛官方无隶属关系。节目可能包含自动生成内容，请以链接中的原帖为准。</p>
+      </footer>
+    </main>
+
+    <script>
+      const episodes = document.querySelector("#episodes");
+      const count = document.querySelector("#episode-count");
+
+      function appendDescription(container, text) {
+        const pattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+        let cursor = 0;
+        for (const match of text.matchAll(pattern)) {
+          container.append(document.createTextNode(text.slice(cursor, match.index)));
+          const link = document.createElement("a");
+          link.href = match[2];
+          link.textContent = match[1];
+          link.rel = "noreferrer";
+          container.append(link);
+          cursor = match.index + match[0].length;
+        }
+        container.append(document.createTextNode(text.slice(cursor)));
+      }
+
+      fetch("feed.xml")
+        .then((response) => {
+          if (!response.ok) throw new Error(`RSS returned ${response.status}`);
+          return response.text();
+        })
+        .then((xml) => new DOMParser().parseFromString(xml, "application/xml"))
+        .then((feed) => {
+          const items = [...feed.querySelectorAll("channel > item")];
+          count.textContent = `${items.length} 期`;
+          for (const item of items) {
+            const card = document.createElement("article");
+            const title = document.createElement("h3");
+            title.textContent = item.querySelector("title")?.textContent || "Nitan Podcast";
+            const published = document.createElement("time");
+            const date = new Date(item.querySelector("pubDate")?.textContent || "");
+            published.dateTime = date.toISOString();
+            published.textContent = new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(date);
+            const player = document.createElement("audio");
+            player.controls = true;
+            player.preload = "none";
+            player.src = item.querySelector("enclosure")?.getAttribute("url") || "";
+            const details = document.createElement("details");
+            const summary = document.createElement("summary");
+            summary.textContent = "本期内容与来源";
+            const description = document.createElement("p");
+            description.className = "description";
+            appendDescription(description, item.querySelector("description")?.textContent || "");
+            details.append(summary, description);
+            card.append(title, published, player, details);
+            episodes.append(card);
+          }
+        })
+        .catch((error) => {
+          count.textContent = "RSS 暂时无法读取";
+          episodes.textContent = error.message;
+        });
+    </script>
+  </body>
+</html>
