@@ -47,7 +47,7 @@ jobs:
       PY: .venv/bin/python
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -113,7 +113,6 @@ jobs:
           && inputs.skip_audio != true
           && inputs.audio_url == ''
         id: audio
-        continue-on-error: true
         run: |
           MP3="releases/weekly_meika_${{ steps.week.outputs.iso_week }}.mp3"
           $PY run_pipeline.py --markdown-input "${{ steps.export.outputs.md_path }}" \
@@ -150,10 +149,16 @@ jobs:
 
       # --- Phase 4: RSS Feed + Forum Post (reuses Phase 1 markdown, no MCP) ---
       - name: Generate RSS feed and forum post
-        if: steps.check.outputs.skip != 'true'
+        if: >-
+          steps.check.outputs.skip != 'true'
+          && steps.release.outputs.audio_url != ''
         run: |
           AUDIO_URL="${{ steps.release.outputs.audio_url }}"
           MP3="${{ steps.audio.outputs.mp3_path }}"
+          if [ -z "$AUDIO_URL" ]; then
+            echo "::error::Refusing to publish RSS without an audio URL"
+            exit 1
+          fi
           FLAGS="--markdown-input ${{ steps.export.outputs.md_path }} --generate-post --generate-rss --log-level INFO"
           if [ -n "$AUDIO_URL" ]; then
             FLAGS="$FLAGS --audio-url $AUDIO_URL"
@@ -165,7 +170,9 @@ jobs:
 
       # --- Phase 5: Commit + Push RSS ---
       - name: Commit and push RSS feed
-        if: steps.check.outputs.skip != 'true'
+        if: >-
+          steps.check.outputs.skip != 'true'
+          && steps.release.outputs.audio_url != ''
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -177,14 +184,18 @@ jobs:
 
       # --- Phase 6: Validate live feed ---
       - name: Validate live feed
-        if: steps.check.outputs.skip != 'true'
+        if: >-
+          steps.check.outputs.skip != 'true'
+          && steps.release.outputs.audio_url != ''
         run: |
           $PY scripts/validate_feed.py --wait-for-deploy 120 \
             --expected-audio-url "${{ steps.release.outputs.audio_url }}"
 
       # --- Artifacts ---
       - name: Upload exports
-        if: steps.check.outputs.skip != 'true'
+        if: >-
+          always()
+          && steps.check.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: weekly-podcast-${{ steps.week.outputs.iso_week }}
@@ -203,10 +214,14 @@ jobs:
             if [ "${{ steps.audio.outputs.has_audio }}" = "true" ]; then
               echo "- Audio: done (${{ steps.release.outputs.audio_url }})" >> $GITHUB_STEP_SUMMARY
             elif [ "${{ steps.audio.outcome }}" = "failure" ]; then
-              echo "- Audio: FAILED (check notebooklm login)" >> $GITHUB_STEP_SUMMARY
+              echo "- Audio: FAILED (publication stopped; export retained)" >> $GITHUB_STEP_SUMMARY
             else
               echo "- Audio: skipped" >> $GITHUB_STEP_SUMMARY
             fi
-            echo "- RSS: updated" >> $GITHUB_STEP_SUMMARY
-            echo "- Forum post: ready in exports/" >> $GITHUB_STEP_SUMMARY
+            if [ -n "${{ steps.release.outputs.audio_url }}" ]; then
+              echo "- RSS: updated" >> $GITHUB_STEP_SUMMARY
+              echo "- Forum post: ready in exports/" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- RSS: not published" >> $GITHUB_STEP_SUMMARY
+            fi
           fi

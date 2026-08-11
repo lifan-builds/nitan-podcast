@@ -17,3 +17,52 @@ The Source Document owns factual Story Brief structure before any NotebookLM aud
 ## Integration boundaries
 
 Nitan MCP topic details require the repository parser because `discourse_read_topic` returns formatted text rather than JSON. Test parser changes with captured synthetic fixtures. Do not use live forum calls as routine validation.
+
+## Scenario: Atomic audio publication
+
+### 1. Scope / Trigger
+
+- Applies whenever the scheduled workflow generates or accepts an episode audio asset and then updates Releases, `docs/episodes/`, or `docs/feed.xml`.
+
+### 2. Signatures
+
+- Workflow readiness signal: `steps.release.outputs.audio_url: string`.
+- Publication steps: `Generate RSS feed and forum post` → `Commit and push RSS feed` → `Validate live feed`.
+
+### 3. Contracts
+
+- An RSS item may be written only after the current episode has a non-empty audio URL backed by either a downloaded MP3 or the explicit `workflow_dispatch.inputs.audio_url` override.
+- An audio-generation failure must fail the job and retain `exports/` as an artifact; it must not create an enclosure with a guessed URL or zero length.
+- `docs/feed.xml`, the committed MP3, and the GitHub Release must describe the same episode URL.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required behavior |
+| --- | --- |
+| NotebookLM fails | Stop release/RSS/commit/validation; upload export; fail job |
+| `skip_audio=true`, no override | Export only; do not publish RSS |
+| Explicit `audio_url` | Publish using that URL without requiring NotebookLM output |
+| Empty release audio URL | Refuse publication before writing RSS |
+| Valid released audio | Commit feed and episode, then validate the exact expected URL |
+
+### 5. Good/Base/Bad Cases
+
+- Good: audio downloads, Release returns the Pages URL, and RSS is committed with a positive enclosure length.
+- Base: export succeeds but audio is intentionally skipped; the workflow finishes without changing public feed state.
+- Bad: continuing after an audio error and allowing the RSS generator to infer a future URL for a nonexistent MP3.
+
+### 6. Tests Required
+
+- Workflow regression tests must assert that audio errors are not ignored, publication steps require a non-empty released audio URL, and exports use `always()` retention.
+- RSS/public-contract tests must continue asserting positive enclosure lengths and stable URL/GUID shapes.
+
+### 7. Wrong vs Correct
+
+```yaml
+# Wrong: publishes a placeholder after the provider fails.
+continue-on-error: true
+if: steps.check.outputs.skip != 'true'
+
+# Correct: fail audio generation and gate every public mutation.
+if: steps.release.outputs.audio_url != ''
+```
