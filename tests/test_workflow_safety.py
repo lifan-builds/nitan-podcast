@@ -30,3 +30,8 @@ def test_publication_steps_require_a_released_audio_url() -> None:
 
 def test_exports_are_retained_after_a_failure() -> None:
     assert "always()" in _step("Upload exports")
+
+
+def test_actions_use_node24_releases() -> None:
+    assert "actions/checkout@v5" in WORKFLOW
+    assert "actions/upload-artifact@v7" in WORKFLOW
