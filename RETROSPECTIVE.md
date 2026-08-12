@@ -46,4 +46,4 @@ The announcement thread produced concrete requests for transcripts, timestamps, 
 
 ## Next proof
 
-[AI Builder Brief](https://github.com/lifan-builds/castforge) will exercise the framework at daily cadence with English AI sources, NotebookLM dialogue, Cloudflare R2 audio, transparent manifests, and fail-closed publication. Its job is both to serve listeners and to prove that CastForge works outside the Nitan-specific forum pipeline.
+[AI Builder Brief](https://github.com/lifan-builds/ai-builder-brief) will exercise the framework at daily cadence with English AI sources, NotebookLM dialogue, Cloudflare R2 audio, transparent manifests, and fail-closed publication. Its job is both to serve listeners and to prove that CastForge works outside the Nitan-specific forum pipeline.
