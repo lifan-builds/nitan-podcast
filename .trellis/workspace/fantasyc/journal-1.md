@@ -31,3 +31,26 @@ Implemented and released evidence-gated editorial selection, seven-day GitHub/Hu
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: AI Builder reliability fix and verified shadow
+
+**Date**: 2026-08-16
+**Task**: AI Builder reliability fix and verified shadow
+**Branch**: `main`
+
+### Summary
+
+Batched editorial review, sanitized failures, intended schedule slots, and caffeinate shipped; private 2026-08-16 run 31966345117 produced a validated three-story shadow without public mutation.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0e53815` | (see git log) |
+| `52b969b` | (see git log) |
+| `e0c3964` | (see git log) |
+
+### Status
+
+[OK] **Completed**
