@@ -126,3 +126,67 @@ stories = select_qualified_candidates(candidates)
 if len(stories) < config.selection.min_stories:
     return NoEpisodeResult(reason="fewer than minimum qualifying stories")
 ```
+
+## Scenario: Reliable scheduled editorial review
+
+### 1. Scope / Trigger
+
+- Applies when a show reviews a bounded candidate pool through CLIProxyAPI on a queued self-hosted macOS runner.
+- Triggered by editorial pools large enough to exceed one model request's practical response time or by scheduled jobs that can start after their intended cron hour.
+
+### 2. Signatures
+
+- `review_candidates_batched(candidates: list[dict], *, batch_size: int = 6) -> dict`.
+- `EditorialReviewError.to_metadata() -> {failure_type: str, stage: str, batch_index?: int}`.
+- `python3 scripts/select_schedule_slot.py --cron "0 H * * *" --date YYYY-MM-DD [--publication-enabled]` emits `run`, `shadow`, and `episode_date` GitHub outputs.
+- Workflow inputs remain `episode_date: string` and `shadow: boolean`; scheduled inputs use `${{ github.event.schedule }}` and `PUBLICATION_ENABLED`.
+
+### 3. Contracts
+
+- Preserve candidate input order and slice it into deterministic batches of at most six. Every batch runs the usage gate, GPT-5.6 Terra strict JSON Schema request, and a 60-second request timeout.
+- Validate each batch's schema values and exact one-decision-per-candidate coverage before merging. Perform the existing global exact-coverage validation after merging.
+- Any usage-gate, timeout, proxy, malformed-response, missing-candidate, duplicate-candidate, or validation failure returns `no-episode` before NotebookLM.
+- Unpublished failure ledgers may contain only `failure_type`, `stage`, and a positive one-based `batch_index`; never persist exception text, request headers, response bodies, credentials, cookies, or authenticated URLs.
+- Scheduled decisions derive the intended Pacific slot from the individual UTC cron expression, not the runner's delayed start hour. Before publication, only the intended 6 AM Pacific slot runs as a shadow; after publication is enabled, 6/8/10 AM Pacific are valid public attempts.
+- Wrap only the episode command with macOS `caffeinate`. Keep `PUBLICATION_ENABLED=false` until the real-shadow gate is satisfied.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required behavior |
+| --- | --- |
+| 23 or 24 candidates | Split into `6/6/6/5` or `6/6/6/6`; merge in input order |
+| One batch times out | Ledger records `timeout`, request stage, and batch index; stop before NotebookLM |
+| Batch omits, duplicates, or invents a candidate | Record `invalid_response` at coverage stage; discard all batch results |
+| Strict-schema value has wrong type/range | Record `invalid_response`; never coerce it into an accepted decision |
+| Usage gate or localhost proxy fails | Record the controlled category/stage without raw details |
+| 6 AM cron job starts hours late | Evaluate the original cron slot and run the intended episode date |
+| Non-attempt UTC cron slot fires | Finish as a skip without episode generation |
+
+### 5. Good/Base/Bad Cases
+
+- Good: four bounded reviews cover 24 candidates exactly once, three to six stories qualify, and the private shadow reaches NotebookLM while public state stays unchanged.
+- Base: valid reviews yield fewer than three qualified stories; record `no-episode` without generating audio.
+- Bad: send all candidates in one request, inspect the runner's current hour, swallow the timeout, or continue to NotebookLM after partial review.
+
+### 6. Tests Required
+
+- Assert 23- and 24-candidate batch sizes, call order, merged order, and global exact coverage.
+- Assert timeout classification, partial/duplicate coverage rejection, strict-schema value validation, failure batch index, and ledger allowlisting without secret substrings.
+- Assert PDT and PST 6 AM mappings, public 8/10 AM recovery slots, pre-publication skips, individual cron entries, and `caffeinate` around only the episode command.
+- Run the complete offline suite before dispatching one explicitly authorized private shadow; compare feed/site hashes, releases, and the target R2 URL before and after.
+
+### 7. Wrong vs Correct
+
+```python
+# Wrong: one oversized request and a generic, unactionable failure.
+response = review_candidates(all_candidates)
+except Exception:
+    write_ledger(status="no-episode-editorial-failure")
+
+# Correct: bounded requests, exact coverage, and controlled diagnostics.
+try:
+    response = review_candidates_batched(all_candidates, batch_size=6)
+    decisions = validate_review(response, expected_ids, metadata)
+except EditorialReviewError as error:
+    write_ledger(status="no-episode-editorial-failure", metadata=error.to_metadata())
+```

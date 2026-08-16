@@ -22,7 +22,7 @@ Make the private AI Builder Brief regeneration pipeline complete reliably on the
 6. Select scheduled attempts from their intended schedule slot rather than the delayed runner start time, while preserving the pre-publication one-shadow-per-day behavior and the public 6/8/10 AM Pacific attempts.
 7. Keep X optional and non-blocking, `PUBLICATION_ENABLED=false`, the R2 9 GB cap, and all existing public feed identity unchanged.
 8. Add focused tests for batching, merged coverage, batch failure, sanitized diagnostics, and schedule-slot selection.
-9. Rerun `2026-08-11` privately only after tests pass. Count it only if 3–6 stories, citations, ledger, MP3 duration, transcript, chapters, temporary-source cleanup, and public-state immutability all validate.
+9. Run `2026-08-16` privately only after tests pass. Count it only if 3–6 stories, citations, ledger, MP3 duration, transcript, chapters, temporary-source cleanup, and public-state immutability all validate.
 
 ## Acceptance Criteria
 
@@ -32,7 +32,7 @@ Make the private AI Builder Brief regeneration pipeline complete reliably on the
 - [ ] The workflow prevents Mac sleep during the episode command.
 - [ ] A delayed scheduled job still evaluates the intended 6/8/10 AM Pacific slot correctly; pre-publication mode runs at most one scheduled private shadow per Pacific day.
 - [ ] Existing unit and fixture-backed pipeline tests pass with the new focused reliability tests.
-- [ ] The private August 11 run either produces a completely validated shadow or fails closed with an attributable reason; no public feed, URL, GUID, or R2 object changes during validation.
+- [ ] The private August 16 run either produces a completely validated shadow or fails closed with an attributable reason; no public feed, URL, GUID, or R2 object changes during validation.
 - [ ] `PUBLICATION_ENABLED` remains false until seven real shadows pass.
 
 ## Out of Scope
@@ -42,4 +42,3 @@ Make the private AI Builder Brief regeneration pipeline complete reliably on the
 - Publishing or replacing public audio before the seven-shadow gate.
 - Repairing X authentication, changing the expert panel, or promoting the show.
 - Modifying unrelated dirty Trellis framework files in Castforge or Nitan.
-
