@@ -26,14 +26,14 @@ Make the private AI Builder Brief regeneration pipeline complete reliably on the
 
 ## Acceptance Criteria
 
-- [ ] A 23- or 24-candidate editorial pool is split deterministically into bounded batches, each using the strict schema and a 60-second timeout.
-- [ ] Merged decisions cover every candidate exactly once; any partial or invalid batch returns `no-episode` before NotebookLM.
-- [ ] Editorial failure ledgers identify a safe failure category and batch/stage without secrets or raw model output.
-- [ ] The workflow prevents Mac sleep during the episode command.
-- [ ] A delayed scheduled job still evaluates the intended 6/8/10 AM Pacific slot correctly; pre-publication mode runs at most one scheduled private shadow per Pacific day.
-- [ ] Existing unit and fixture-backed pipeline tests pass with the new focused reliability tests.
-- [ ] The private August 16 run either produces a completely validated shadow or fails closed with an attributable reason; no public feed, URL, GUID, or R2 object changes during validation.
-- [ ] `PUBLICATION_ENABLED` remains false until seven real shadows pass.
+- [x] A 23- or 24-candidate editorial pool is split deterministically into bounded batches, each using the strict schema and a 60-second timeout.
+- [x] Merged decisions cover every candidate exactly once; any partial or invalid batch returns `no-episode` before NotebookLM.
+- [x] Editorial failure ledgers identify a safe failure category and batch/stage without secrets or raw model output.
+- [x] The workflow prevents Mac sleep during the episode command.
+- [x] A delayed scheduled job still evaluates the intended 6/8/10 AM Pacific slot correctly; pre-publication mode runs at most one scheduled private shadow per Pacific day.
+- [x] Existing unit and fixture-backed pipeline tests pass with the new focused reliability tests.
+- [x] The private August 16 run either produces a completely validated shadow or fails closed with an attributable reason; no public feed, URL, GUID, or R2 object changes during validation.
+- [x] `PUBLICATION_ENABLED` remains false until seven real shadows pass.
 
 ## Out of Scope
 
