@@ -282,6 +282,7 @@ if review_only and not result.healthy:
 - Rank selected items by class-adjusted review priority, then cluster ID. Do not restore raw-score ordering after class adjustments.
 - Organization affiliation is entity-resolution metadata only. Cross-source consolidation requires both a shared configured organization/entity and a shared salient topic; affiliation never adds ranking points and organization/account names are removed from the topic-token set.
 - For independent reporting, the configured `organization` names the publisher, not the story subject. Subject entities come from controlled organizations mentioned in the title/summary. Broad technology, Hacker News, and approved-X sources use `topic_filter: ai` before ranking so general security or personal posts cannot become AI news merely because builders use the affected product.
+- Representative aggregation emits `story_organization` when a cluster resolves to exactly one subject organization. Final organization diversity uses that subject; individual source citations retain their publishers. Two reports from the same publication about different AI companies therefore do not block one another.
 - Controlled product-family matching may normalize version spelling across primary and community sources (for example, compact versus spaced model versions). Product-family resolution consolidates duplicate themes and never adds ranking points.
 - Community engagement is importance context, not technical evidence. Existing podcast-readiness evidence rules remain unchanged.
 
@@ -298,6 +299,7 @@ if review_only and not result.healthy:
 | A class or quota lacks enough qualifying items | Emit an explicit quality exclusion or mix shortfall; do not add filler |
 | Two sources share an affiliated organization but discuss different topics | Keep separate themes |
 | Two independent articles share a publisher or topic word but name different subject organizations | Keep separate themes |
+| Two qualifying themes share a publisher but resolve to different subject organizations | Both remain eligible for organization diversity |
 | Broad technology/community item has no direct AI term | Exclude it before editorial scoring |
 | Multiple posts discuss different spellings/versions of one configured product family | Consolidate them into one product theme |
 | Named validation examples match the desired story shape but are stale | Exclude them; never bypass freshness by vendor/title |
@@ -315,6 +317,7 @@ if review_only and not result.healthy:
 - Assert final ordering uses `review_priority`, including a qualifying maintenance item whose raw score exceeds a broader development but whose adjusted priority does not.
 - Assert affiliation plus topic overlap consolidates one event while the same organization with a different topic remains separate.
 - Assert affiliation/account names cannot count as topic overlap, independent publishers are not story subjects, and configured AI topic filters reject unrelated general-technology items.
+- Assert representative aggregation substitutes the single resolved subject for publisher-based diversity while citation records preserve the source publisher.
 - Assert review artifacts expose `window_start`, non-zero `quality_exclusion_count`, exclusion reasons, and quota shortfalls without filler.
 - Search production ranking code for named validation examples; source configuration and generic product-family entity resolution are allowed, but ranking constants and allowlists are not.
 
