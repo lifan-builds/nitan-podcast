@@ -127,19 +127,17 @@ if len(stories) < config.selection.min_stories:
     return NoEpisodeResult(reason="fewer than minimum qualifying stories")
 ```
 
-## Scenario: Reliable scheduled editorial review
+## Scenario: Reliable batched editorial review
 
 ### 1. Scope / Trigger
 
-- Applies when a show reviews a bounded candidate pool through CLIProxyAPI on a queued self-hosted macOS runner.
-- Triggered by editorial pools large enough to exceed one model request's practical response time or by scheduled jobs that can start after their intended cron hour.
+- Applies when a show reviews a bounded candidate pool through CLIProxyAPI.
+- Triggered by editorial pools large enough to exceed one model request's practical response time.
 
 ### 2. Signatures
 
 - `review_candidates_batched(candidates: list[dict], *, batch_size: int = 6) -> dict`.
 - `EditorialReviewError.to_metadata() -> {failure_type: str, stage: str, batch_index?: int}`.
-- `python3 scripts/select_schedule_slot.py --cron "0 H * * *" --date YYYY-MM-DD [--publication-enabled]` emits `run`, `shadow`, and `episode_date` GitHub outputs.
-- Workflow inputs remain `episode_date: string` and `shadow: boolean`; scheduled inputs use `${{ github.event.schedule }}` and `PUBLICATION_ENABLED`.
 
 ### 3. Contracts
 
@@ -147,8 +145,6 @@ if len(stories) < config.selection.min_stories:
 - Validate each batch's schema values and exact one-decision-per-candidate coverage before merging. Perform the existing global exact-coverage validation after merging.
 - Any usage-gate, timeout, proxy, malformed-response, missing-candidate, duplicate-candidate, or validation failure returns `no-episode` before NotebookLM.
 - Unpublished failure ledgers may contain only `failure_type`, `stage`, and a positive one-based `batch_index`; never persist exception text, request headers, response bodies, credentials, cookies, or authenticated URLs.
-- Scheduled decisions derive the intended Pacific slot from the individual UTC cron expression, not the runner's delayed start hour. Before publication, only the intended 6 AM Pacific slot runs as a shadow; after publication is enabled, 6/8/10 AM Pacific are valid public attempts.
-- Wrap only the episode command with macOS `caffeinate`. Keep `PUBLICATION_ENABLED=false` until the real-shadow gate is satisfied.
 
 ### 4. Validation & Error Matrix
 
@@ -159,12 +155,10 @@ if len(stories) < config.selection.min_stories:
 | Batch omits, duplicates, or invents a candidate | Record `invalid_response` at coverage stage; discard all batch results |
 | Strict-schema value has wrong type/range | Record `invalid_response`; never coerce it into an accepted decision |
 | Usage gate or localhost proxy fails | Record the controlled category/stage without raw details |
-| 6 AM cron job starts hours late | Evaluate the original cron slot and run the intended episode date |
-| Non-attempt UTC cron slot fires | Finish as a skip without episode generation |
 
 ### 5. Good/Base/Bad Cases
 
-- Good: four bounded reviews cover 24 candidates exactly once, three to six stories qualify, and the private shadow reaches NotebookLM while public state stays unchanged.
+- Good: four bounded reviews cover 24 candidates exactly once and return controlled decisions for downstream use.
 - Base: valid reviews yield fewer than three qualified stories; record `no-episode` without generating audio.
 - Bad: send all candidates in one request, inspect the runner's current hour, swallow the timeout, or continue to NotebookLM after partial review.
 
@@ -172,8 +166,7 @@ if len(stories) < config.selection.min_stories:
 
 - Assert 23- and 24-candidate batch sizes, call order, merged order, and global exact coverage.
 - Assert timeout classification, partial/duplicate coverage rejection, strict-schema value validation, failure batch index, and ledger allowlisting without secret substrings.
-- Assert PDT and PST 6 AM mappings, public 8/10 AM recovery slots, pre-publication skips, individual cron entries, and `caffeinate` around only the episode command.
-- Run the complete offline suite before dispatching one explicitly authorized private shadow; compare feed/site hashes, releases, and the target R2 URL before and after.
+- Run the complete offline suite before dispatching a live editorial review.
 
 ### 7. Wrong vs Correct
 
@@ -189,4 +182,66 @@ try:
     decisions = validate_review(response, expected_ids, metadata)
 except EditorialReviewError as error:
     write_ledger(status="no-episode-editorial-failure", metadata=error.to_metadata())
+```
+
+## Scenario: Review-only daily editorial artifacts
+
+### 1. Scope / Trigger
+
+- Applies while AI Builder Brief is in editorial-tuning mode and scheduled/manual jobs must expose a broader candidate set without generating a podcast.
+- Triggered by `.github/workflows/daily.yml` or an explicit `ai_builder_brief run --review-only` invocation.
+
+### 2. Signatures
+
+- CLI: `python -m ai_builder_brief run --date YYYY-MM-DD --review-only`.
+- Pipeline: `run_daily(..., review_only: bool = False) -> str`; successful review mode returns `review-ready`.
+- Readiness predicate: `is_podcast_ready(decision: EditorialDecision) -> bool`.
+- JSON artifact: `build/review/YYYY-MM-DD.json`; Markdown artifact: `build/review/YYYY-MM-DD.md`.
+- Schedule selector: `python3 scripts/select_schedule_slot.py --cron "0 H * * *" --date YYYY-MM-DD` emits the intended `run`, `shadow`, and `episode_date` outputs; review workflow ignores the legacy `shadow` value.
+
+### 3. Contracts
+
+- Review-only mode shares live collection, snapshot enrichment, deterministic preprocessing, bounded editorial requests, strict value validation, exact candidate coverage, and the full editorial ledger with the episode path.
+- After successful review, rank model-reviewed candidates by editorial score descending and cluster ID ascending, retain at most ten, and include accepts and rejects.
+- Each JSON candidate contains rank, cluster identity, title, summary, organization, category, publication time, decision, score, `podcast_ready`, full controlled editorial fields, and source IDs/URLs/authorities/summaries. Markdown renders the same ordered records and citations.
+- `podcast_ready` is true only for `accept`, score `>= 70`, impact `>= 3`, and evidence `>= 3`. Review success does not require three ready stories.
+- Return `review-ready` immediately after writing review artifacts. Do not call `run_episode`, NotebookLM, transcription, R2, RSS, manifests, public-site rendering, or `docs/` mutation.
+- The scheduled workflow admits only the intended 6 AM Pacific slot across PDT/PST, wraps the review command with `caffeinate`, has `contents: read`, installs no transcription extra, exposes only `episode_date`, and contains no audio/R2 secrets, public validation, commit, or push steps.
+- Collector/editorial failures retain only the sanitized fail-closed ledger; never emit a partial top ten.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required behavior |
+| --- | --- |
+| 12 valid reviewed candidates | Emit ranks 1–10 only; deterministic tie-break by cluster ID |
+| High-scoring editorial reject | Include in top ten with `podcast_ready: false` and rationale |
+| Fewer than three ready candidates | Return `review-ready`; show the actual ready count |
+| Collector or editorial failure | Return `no-episode`; retain sanitized ledger; omit partial review files |
+| Existing RSS GUID for the date | Still run review-only mode; published-date skipping applies only to episode mode |
+| 6 AM cron starts late | Use the intended cron slot/date rather than runner wall-clock hour |
+| Non-6 AM cron during review period | Skip without collection or artifact generation |
+
+### 5. Good/Base/Bad Cases
+
+- Good: ten ranked accepted/rejected candidates have matching JSON/Markdown citations, and ready items are clearly marked without audio side effects.
+- Base: only two candidates exist; both are rendered and the job succeeds as a completed review.
+- Bad: feed rejected candidates to NotebookLM, require three ready stories for review success, or leave a hidden workflow branch that can publish when a repository variable changes.
+
+### 6. Tests Required
+
+- Assert deterministic rank/cap behavior, reject inclusion, unchanged readiness thresholds, JSON/Markdown item parity, citations, and UTF-8 output.
+- Monkeypatch `run_episode` to fail if called and assert review-only execution still returns `review-ready` with no feed, manifest, audio, transcript, chapter, site, or `docs/` artifacts.
+- Workflow tests assert `--review-only`, `contents: read`, artifact retention, explicit manual date handling, individual PDT/PST cron entries, and absence of NotebookLM/R2 credentials, `PUBLICATION_ENABLED`, shadow input, public validation, commit, and push steps.
+
+### 7. Wrong vs Correct
+
+```python
+# Wrong: enforce the episode minimum and continue into audio.
+selected = select_clusters(clusters, decisions, minimum=3, maximum=10)
+manifest = run_episode(config, review_date)
+
+# Correct: write the broader review, then stop at the pre-audio boundary.
+if review_only:
+    write_review_artifacts(review_date, representatives, candidates, decisions, review_dir)
+    return "review-ready"
 ```
