@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 2
-- **Last Active**: 2026-08-16
+- **Total Sessions**: 3
+- **Last Active**: 2026-08-17
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~56 | Active |
+| `journal-1.md` | ~88 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 3 | 2026-08-17 | Review-only AI Builder daily feed | `38f32ad`, `625a952` | `main` |
 | 2 | 2026-08-16 | AI Builder reliability fix and verified shadow | `0e53815`, `52b969b`, `e0c3964` | `main` |
 | 1 | 2026-08-11 | AI Builder Brief editorial redesign | `3be3aba`, `217bff3`, `6db562f`, `d3967e6`, `a69d938`, `605cabf`, `e78804a` | `main` |
 <!-- @@@/auto:session-history -->
