@@ -279,10 +279,11 @@ if review_only and not result.healthy:
 - Classify from controlled source and content metadata, not vendor/title allowlists. Release feeds are maintenance by default; Daily Papers and research-category items are research by default. A cluster with substantive non-release evidence can still be a major development.
 - Admission penalties and bounded class caps prevent routine releases or ordinary papers from consuming the model-review pool, while leaving up to two candidates in each class available for exceptional-case judgment.
 - Final selection applies the class-aware quality floor before the six-community/four-primary target. Maintenance and research require exceptional consequence; other developments and community themes must still clear their consequence floors. Return fewer than ten instead of backfilling excluded items.
+- A `major_development` requires score `>= 65`, impact `>= 3`, and audience breadth `>= 2`. This floor is intentionally above a merely plausible rejected item; a quiet day may expose a larger primary shortfall.
 - Rank selected items by class-adjusted review priority, then cluster ID. Do not restore raw-score ordering after class adjustments.
 - Organization affiliation is entity-resolution metadata only. Cross-source consolidation requires both a shared configured organization/entity and a shared salient topic; affiliation never adds ranking points and organization/account names are removed from the topic-token set.
 - For independent reporting, the configured `organization` names the publisher, not the story subject. Subject entities come from controlled organizations mentioned in the title/summary. Broad technology, Hacker News, and approved-X sources use `topic_filter: ai` before ranking so general security or personal posts cannot become AI news merely because builders use the affected product.
-- Representative aggregation emits `story_organization` when a cluster resolves to exactly one subject organization. Final organization diversity uses that subject; individual source citations retain their publishers. Two reports from the same publication about different AI companies therefore do not block one another.
+- Representative aggregation emits `story_organization` when the non-empty subject sets across a cluster have exactly one organization in common. Extra implementation/provider mentions in one report do not make the primary subject ambiguous; no common single subject leaves the field empty. Final organization diversity uses that subject, while individual source citations retain their publishers.
 - Controlled product-family matching may normalize version spelling across primary and community sources (for example, compact versus spaced model versions). Product-family resolution consolidates duplicate themes and never adds ranking points.
 - Community engagement is importance context, not technical evidence. Existing podcast-readiness evidence rules remain unchanged.
 
@@ -300,6 +301,8 @@ if review_only and not result.healthy:
 | Two sources share an affiliated organization but discuss different topics | Keep separate themes |
 | Two independent articles share a publisher or topic word but name different subject organizations | Keep separate themes |
 | Two qualifying themes share a publisher but resolve to different subject organizations | Both remain eligible for organization diversity |
+| One source names the main subject and another also names its technology provider | Use the single subject common to both source-level entity sets |
+| Major development scores below 65 | Exclude it and report the quality/mix shortfall |
 | Broad technology/community item has no direct AI term | Exclude it before editorial scoring |
 | Multiple posts discuss different spellings/versions of one configured product family | Consolidate them into one product theme |
 | Named validation examples match the desired story shape but are stale | Exclude them; never bypass freshness by vendor/title |
@@ -318,6 +321,7 @@ if review_only and not result.healthy:
 - Assert affiliation plus topic overlap consolidates one event while the same organization with a different topic remains separate.
 - Assert affiliation/account names cannot count as topic overlap, independent publishers are not story subjects, and configured AI topic filters reject unrelated general-technology items.
 - Assert representative aggregation substitutes the single resolved subject for publisher-based diversity while citation records preserve the source publisher.
+- Assert a subject common to all resolved source sets survives extra provider mentions, while genuinely ambiguous clusters remain unresolved.
 - Assert review artifacts expose `window_start`, non-zero `quality_exclusion_count`, exclusion reasons, and quota shortfalls without filler.
 - Search production ranking code for named validation examples; source configuration and generic product-family entity resolution are allowed, but ranking constants and allowlists are not.
 
