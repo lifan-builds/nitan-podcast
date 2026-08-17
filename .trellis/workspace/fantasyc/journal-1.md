@@ -86,3 +86,24 @@ Added and validated scheduled review-only AI Builder runs with top-10 JSON and M
 ### Status
 
 [OK] **Completed**
+
+
+## Session 4: Community-first AI briefing and X runner fix
+
+**Date**: 2026-08-17
+**Task**: Community-first AI briefing and X runner fix
+**Branch**: `main`
+
+### Summary
+
+Redesigned AI Builder review ranking around a 6/4 community-primary mix, added product and organization diversity, fail-closed X health, runner secret authentication, and verified August 17 review-only artifacts without publication changes.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `67e61af` | (see git log) |
+
+### Status
+
+[OK] **Completed**
