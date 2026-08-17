@@ -107,3 +107,31 @@ Redesigned AI Builder review ranking around a 6/4 community-primary mix, added p
 ### Status
 
 [OK] **Completed**
+
+
+## Session 5: Consequential AI editorial review
+
+**Date**: 2026-08-17
+**Task**: Consequential AI editorial review
+**Branch**: `main`
+
+### Summary
+
+Implemented and live-verified a strict 72-hour, opportunity-cost editorial workflow for AI Builder Brief. Added maintenance/research gates, AI-domain filtering, conservative entity/topic and product-family clustering, subject-based diversity, and explicit quality shortfalls. Final review-only run 32071403173 produced five timely themes with healthy X coverage and no public/audio mutation.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9debdc6` | (see git log) |
+| `67fdd8d` | (see git log) |
+| `9a30460` | (see git log) |
+| `50e9254` | (see git log) |
+| `d39ebaa` | (see git log) |
+| `28b4c87` | (see git log) |
+| `82b64d0` | (see git log) |
+| `f61df51` | (see git log) |
+
+### Status
+
+[OK] **Completed**
