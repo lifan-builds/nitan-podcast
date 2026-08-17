@@ -184,7 +184,7 @@ except EditorialReviewError as error:
     write_ledger(status="no-episode-editorial-failure", metadata=error.to_metadata())
 ```
 
-## Scenario: Review-only daily editorial artifacts
+## Scenario: Community-first review-only daily editorial artifacts
 
 ### 1. Scope / Trigger
 
@@ -195,16 +195,21 @@ except EditorialReviewError as error:
 
 - CLI: `python -m ai_builder_brief run --date YYYY-MM-DD --review-only`.
 - Pipeline: `run_daily(..., review_only: bool = False) -> str`; successful review mode returns `review-ready`.
-- Readiness predicate: `is_podcast_ready(decision: EditorialDecision) -> bool`.
+- Collector: `collect_sources(...) -> CollectionResult`; the result contains `items` and a sanitized `x_panel` health record.
+- Readiness predicate: `is_podcast_ready(decision: EditorialDecision, sources: Iterable[SourceItem] | None = None) -> bool`.
 - JSON artifact: `build/review/YYYY-MM-DD.json`; Markdown artifact: `build/review/YYYY-MM-DD.md`.
+- Source health: `build/source-health/YYYY-MM-DD.json` records configured, attempted, successful, in-window, and failed approved X accounts.
 - Schedule selector: `python3 scripts/select_schedule_slot.py --cron "0 H * * *" --date YYYY-MM-DD` emits the intended `run`, `shadow`, and `episode_date` outputs; review workflow ignores the legacy `shadow` value.
 
 ### 3. Contracts
 
 - Review-only mode shares live collection, snapshot enrichment, deterministic preprocessing, bounded editorial requests, strict value validation, exact candidate coverage, and the full editorial ledger with the episode path.
-- After successful review, rank model-reviewed candidates by editorial score descending and cluster ID ascending, retain at most ten, and include accepts and rejects.
+- X is required for a completed community-first review: at least 80% of the configured approved panel must be queried successfully and at least one X post must fall inside the review window. Failure retains the raw snapshot, source-health artifact, and sanitized ledger, but removes/omits the dated top-ten JSON and Markdown.
+- Deterministic admission reserves 12 clusters with X/Hacker News/Hugging Face/measured GitHub community signals and 12 primary-led clusters. Engagement and momentum reach model review as controlled context; they never become authority for technical claims.
+- After successful review, select six community-led and four primary-led model-reviewed candidates by editorial score descending and cluster ID ascending. Include accepts and rejects, and allow at most one candidate per organization or explicit product family.
+- Explicit product-family identity clusters versioned Ollama, vLLM, llama.cpp, Transformers, and their GitHub counterparts before URL/headline similarity.
 - Each JSON candidate contains rank, cluster identity, title, summary, organization, category, publication time, decision, score, `podcast_ready`, full controlled editorial fields, and source IDs/URLs/authorities/summaries. Markdown renders the same ordered records and citations.
-- `podcast_ready` is true only for `accept`, score `>= 70`, impact `>= 3`, and evidence `>= 3`. Review success does not require three ready stories.
+- `podcast_ready` is true only for `accept`, score `>= 70`, impact `>= 3`, evidence `>= 3`, and qualifying evidence from a primary source or two independent sources. Signal/analysis-only community observations remain not ready even when accepted.
 - Return `review-ready` immediately after writing review artifacts. Do not call `run_episode`, NotebookLM, transcription, R2, RSS, manifests, public-site rendering, or `docs/` mutation.
 - The scheduled workflow admits only the intended 6 AM Pacific slot across PDT/PST, wraps the review command with `caffeinate`, has `contents: read`, installs no transcription extra, exposes only `episode_date`, and contains no audio/R2 secrets, public validation, commit, or push steps.
 - Collector/editorial failures retain only the sanitized fail-closed ledger; never emit a partial top ten.
@@ -217,31 +222,36 @@ except EditorialReviewError as error:
 | High-scoring editorial reject | Include in top ten with `podcast_ready: false` and rationale |
 | Fewer than three ready candidates | Return `review-ready`; show the actual ready count |
 | Collector or editorial failure | Return `no-episode`; retain sanitized ledger; omit partial review files |
+| Fewer than 80% of X accounts succeed or zero in-window X posts | Return `no-episode`; retain raw snapshot/source health; emit no top ten |
+| Multiple release versions from one product | Collapse under one explicit product-family cluster |
+| One organization/product would occupy multiple review slots | Keep its highest-ranked eligible item only and expose any mix shortfall |
 | Existing RSS GUID for the date | Still run review-only mode; published-date skipping applies only to episode mode |
 | 6 AM cron starts late | Use the intended cron slot/date rather than runner wall-clock hour |
 | Non-6 AM cron during review period | Skip without collection or artifact generation |
 
 ### 5. Good/Base/Bad Cases
 
-- Good: ten ranked accepted/rejected candidates have matching JSON/Markdown citations, and ready items are clearly marked without audio side effects.
-- Base: only two candidates exist; both are rendered and the job succeeds as a completed review.
-- Bad: feed rejected candidates to NotebookLM, require three ready stories for review success, or leave a hidden workflow branch that can publish when a repository variable changes.
+- Good: healthy X coverage yields six distinct community-led themes and four distinct primary developments with matching citations and no audio side effects.
+- Base: healthy collection has too few distinct candidates for one class; render fewer than ten and expose the exact mix shortfall.
+- Bad: silently complete a release-only top ten after X fails, treat likes as factual corroboration, or fill a diversity shortfall with duplicate Ollama/OpenAI entries.
 
 ### 6. Tests Required
 
-- Assert deterministic rank/cap behavior, reject inclusion, unchanged readiness thresholds, JSON/Markdown item parity, citations, and UTF-8 output.
+- Assert X retry/engagement/health, the 80% plus in-window gate, product-family clustering, 12/12 admission, 6/4 selection, one-per-organization/product diversity, signal-only readiness failure, JSON/Markdown parity, citations, and UTF-8 output.
 - Monkeypatch `run_episode` to fail if called and assert review-only execution still returns `review-ready` with no feed, manifest, audio, transcript, chapter, site, or `docs/` artifacts.
 - Workflow tests assert `--review-only`, `contents: read`, artifact retention, explicit manual date handling, individual PDT/PST cron entries, and absence of NotebookLM/R2 credentials, `PUBLICATION_ENABLED`, shadow input, public validation, commit, and push steps.
 
 ### 7. Wrong vs Correct
 
 ```python
-# Wrong: enforce the episode minimum and continue into audio.
-selected = select_clusters(clusters, decisions, minimum=3, maximum=10)
-manifest = run_episode(config, review_date)
+# Wrong: silently produce a release-centric review after social collection fails.
+items = collect_sources(config, start=start, end=end)
+write_review_artifacts(review_date, top_fixed_scores(items))
 
-# Correct: write the broader review, then stop at the pre-audio boundary.
-if review_only:
-    write_review_artifacts(review_date, representatives, candidates, decisions, review_dir)
-    return "review-ready"
+# Correct: preserve diagnostics and fail closed until the approved panel is healthy.
+result = collect_sources(config, start=start, end=end)
+write_source_health(review_date, result.x_panel)
+if review_only and not result.healthy:
+    write_ledger(status="no-review-source-failure")
+    return "no-episode"
 ```
