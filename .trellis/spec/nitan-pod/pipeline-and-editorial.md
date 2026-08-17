@@ -255,3 +255,76 @@ if review_only and not result.healthy:
     write_ledger(status="no-review-source-failure")
     return "no-episode"
 ```
+
+## Scenario: Consequential-news eligibility and opportunity cost
+
+### 1. Scope / Trigger
+
+- Applies to every AI Builder Brief scheduled or manual review-only run.
+- Triggered before model review whenever live items are combined with historical snapshots, and again when reviewed candidates compete for the ten review slots.
+
+### 2. Signatures
+
+- Configuration: `selection.recent_days: 3`.
+- Eligibility: `_eligible_editorial_items(items, *, start: datetime, end: datetime) -> list[SourceItem]`.
+- Classification metadata: `SourceItem.metadata.editorial_class: major_development | maintenance_release | research | community_theme`.
+- Theme metadata: `SourceItem.metadata.theme_key: str`.
+- Final gate: `review_priority(decision: EditorialDecision, representative: SourceItem) -> tuple[bool, float, int, str]`.
+- Review JSON: `window_start`, `quality_exclusion_count`, `quality_exclusions`, `mix_shortfall`, and per-candidate `review_priority`, `priority_adjustment`, and `quality_reason`.
+
+### 3. Contracts
+
+- Compute the cutoff from the configured 06:00 Pacific review time minus exactly 72 hours. Eligible publication timestamps are inclusive at both the cutoff and review time; malformed, older, or future timestamps are excluded.
+- Historical snapshots may supply metric baselines. After delta calculation, retain only the newest snapshot copy for each source ID whose original `published_at` remains inside the current window. A snapshot date never makes an old story current.
+- Classify from controlled source and content metadata, not vendor/title allowlists. Release feeds are maintenance by default; Daily Papers and research-category items are research by default. A cluster with substantive non-release evidence can still be a major development.
+- Admission penalties and bounded class caps prevent routine releases or ordinary papers from consuming the model-review pool, while leaving up to two candidates in each class available for exceptional-case judgment.
+- Final selection applies the class-aware quality floor before the six-community/four-primary target. Maintenance and research require exceptional consequence; other developments and community themes must still clear their consequence floors. Return fewer than ten instead of backfilling excluded items.
+- Rank selected items by class-adjusted review priority, then cluster ID. Do not restore raw-score ordering after class adjustments.
+- Organization affiliation is entity-resolution metadata only. Cross-source consolidation requires both a shared configured organization/entity and a shared salient topic; affiliation never adds ranking points.
+- Community engagement is importance context, not technical evidence. Existing podcast-readiness evidence rules remain unchanged.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required behavior |
+| --- | --- |
+| Item timestamp equals the 72-hour cutoff | Include it |
+| Item is one second older, malformed, or after the review time | Exclude it |
+| Old item appears in a newer snapshot | Keep it only as a delta baseline; never send it to editorial review |
+| Multiple snapshot copies share a source ID | Keep the newest eligible snapshot copy |
+| Routine release or ordinary paper scores well from detail/engagement | Exclude it unless it clears its exceptional class gate |
+| Exceptional maintenance or research changes a broad builder assumption | Allow it through the documented class gate and retain its priority penalty |
+| A class or quota lacks enough qualifying items | Emit an explicit quality exclusion or mix shortfall; do not add filler |
+| Two sources share an affiliated organization but discuss different topics | Keep separate themes |
+| Named validation examples match the desired story shape but are stale | Exclude them; never bypass freshness by vendor/title |
+
+### 5. Good/Base/Bad Cases
+
+- Good: a provider policy change and its affiliated community discussion consolidate into one timely theme; a consequential model/API shift outranks a detailed runtime changelog.
+- Base: a quiet 72-hour window yields seven strong themes. The artifact reports seven candidates plus the exact quality and mix shortfalls.
+- Bad: reuse a seven-day snapshot pool, treat a release-note length or paper upvotes as broad impact, or hardcode a preferred company/title so it bypasses freshness and quality gates.
+
+### 6. Tests Required
+
+- Assert the exact 72-hour boundary, future rejection, malformed timestamps, historical-snapshot exclusion, and newest-copy deduplication.
+- Assert release/research classification, admission penalties and caps, an ordinary maintenance/research rejection, and an exceptional path for each class.
+- Assert final ordering uses `review_priority`, including a qualifying maintenance item whose raw score exceeds a broader development but whose adjusted priority does not.
+- Assert affiliation plus topic overlap consolidates one event while the same organization with a different topic remains separate.
+- Assert review artifacts expose `window_start`, non-zero `quality_exclusion_count`, exclusion reasons, and quota shortfalls without filler.
+- Search production ranking code for named validation examples; source configuration and generic product-family entity resolution are allowed, but ranking constants and allowlists are not.
+
+### 7. Wrong vs Correct
+
+```python
+# Wrong: the newest snapshot and raw score silently override editorial policy.
+eligible = load_last_seven_snapshot_days()
+selected = sorted(reviewed, key=lambda item: item.score, reverse=True)[:10]
+
+# Correct: snapshots inform deltas, while current timestamps and adjusted
+# opportunity cost control eligibility and ordering.
+eligible = _eligible_editorial_items(
+    _apply_snapshot_deltas(snapshot_history),
+    start=review_time - timedelta(hours=72),
+    end=review_time,
+)
+selected = select_after_quality_floor(reviewed, key=review_priority)
+```
