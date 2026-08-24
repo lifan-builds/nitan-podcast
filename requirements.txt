@@ -1,4 +1,5 @@
 # Python 3.10+
+castforge @ git+https://github.com/lifan-builds/castforge.git@v0.1.3
 python-dotenv==1.2.2
 google-genai==1.69.0
 mcp==1.26.0

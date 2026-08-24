@@ -36,7 +36,7 @@ flowchart LR
 <summary>2025-03-25 → 2026-03-27: Initial build through first episode</summary>
 
 - Project init, architecture pivot to NotebookLM-first
-- `extractor.py` (MCP), `briefing_writer.py` (Gemini), `notebooklm_export.py`, `run_pipeline.py`
+- `extractor.py` (MCP), `run_pipeline.py` (show composition), and the CastForge briefing/export stages
 - Demo script, GitHub Actions workflow, fixtures
 - `notebooklm-py` integration (`--publish-notebooklm`)
 - `publisher.py` (forum posts), `rss_feed.py` (RSS + iTunes)

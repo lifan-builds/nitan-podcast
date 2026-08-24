@@ -4,7 +4,7 @@ Weekly Chinese podcast generated from hot discussions on USCardForum.
 
 ![Nitan Podcast cover](assets/cover.png)
 
-`Nitan Podcast` is the public show repository: it owns the podcast identity, feed, episode assets, forum post templates, and the Nitan/USCardForum-specific logic behind each episode. The reusable automation is being split into `CastForge`, while this repo remains the canonical home of the show.
+`Nitan Podcast` is the public show repository: it owns the podcast identity, feed, episode assets, forum post templates, and the Nitan/USCardForum-specific logic behind each episode. Reusable pipeline stages are provided by the pinned `CastForge` dependency; this repo remains the canonical home of the show.
 
 **Forum thread:** [【Nitan Podcast】你的每周美卡论坛精华播客](https://www.uscardforum.com/t/topic/494521)
 
@@ -30,7 +30,7 @@ The [public episode archive](https://lifan-builds.github.io/nitan-podcast/) incl
 
 ## Public Compatibility Contract
 
-The automation may move into `CastForge`, but the subscriber-facing surface of this show must stay stable.
+The automation runs through `CastForge`, but the subscriber-facing surface of this show must stay stable.
 
 - Feed URL stays `https://lifan-builds.github.io/nitan-podcast/feed.xml`
 - Site URL stays `https://lifan-builds.github.io/nitan-podcast/`
@@ -53,12 +53,12 @@ That is what keeps Spotify and Apple Podcasts from seeing the migration as a bro
 ## What `CastForge` Owns
 
 - reusable pipeline stages
-- scheduling and workflow automation
-- self-hosted runner setup
-- job orchestration and idempotency
 - shared integrations for LLM and audio tooling
+- framework-level orchestration and contracts
 
-See `podcast.yaml` for the instance contract this repo will expose to `CastForge`, and `docs/castforge-migration.md` for the migration plan.
+This repository owns the weekly schedule, runner setup, workflow gates, publication, and idempotency policy.
+
+See `podcast.yaml` for the instance contract exposed to `CastForge`, and `docs/castforge-migration.md` for the current integration boundary.
 
 ## Quick Start
 
@@ -70,7 +70,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Configure `MCP_*`, optional `GEMINI_API_KEY`, and `NOTEBOOKLM_*` in `.env`.
+`requirements.txt` installs the pinned CastForge release and show-specific dependencies. Configure `MCP_*`, optional `GEMINI_API_KEY`, and `NOTEBOOKLM_*` in `.env`.
 
 ## Run The Podcast Pipeline
 
@@ -98,7 +98,7 @@ The login stores `~/.notebooklm/storage_state.json`; it is separate from a norma
 
 ## Automation
 
-This repo owns its own weekly schedule and GitHub Actions workflow. Pipeline execution is powered by `CastForge`, which is installed as a dependency at runtime.
+This repo owns its own weekly schedule and GitHub Actions workflow. Pipeline execution is powered by `CastForge`, installed from the `v0.1.3` tag through `requirements.txt`. The workflow does not install a second CastForge copy.
 
 The workflow runs on a **self-hosted macOS runner** with three Monday retry windows (6 AM / 12 PM / 6 PM PST). First success publishes the episode; subsequent triggers skip.
 
@@ -123,19 +123,19 @@ python scripts/validate_feed.py
 Useful docs:
 
 - `AGENTS.md` for architecture and conventions
-- `docs/castforge-migration.md` for the repo split plan
-- `podcast.yaml` for the future instance contract
+- `docs/castforge-migration.md` for the current CastForge integration boundary
+- `podcast.yaml` for the instance contract
 
 ## Project Structure
 
 | Path | Purpose |
 | ---- | ------- |
-| `run_pipeline.py` | Current CLI orchestrator |
+| `run_pipeline.py` | Show-specific composition layer around `castforge.pipeline` |
 | `extractor.py` | Nitan MCP extraction + fixture support |
 | `editorial/category_voice.yaml` | Prescriptive category voice guide for Story Briefs |
-| `briefing_writer.py` | Optional Gemini briefing |
-| `notebooklm_export.py` | UTF-8 Markdown export |
-| `notebooklm_audio.py` | NotebookLM upload/generate/download |
+| `castforge.briefing` | Optional Gemini briefing supplied by CastForge |
+| `castforge.export` | UTF-8 Markdown export supplied by CastForge |
+| `castforge.notebooklm_audio` | NotebookLM upload/generate/download supplied by CastForge |
 | `publisher.py` | Episode metadata + forum posts |
 | `rss_feed.py` | RSS 2.0 + iTunes feed generator |
 | `public_contract.py` | Stable public URLs and identifiers |

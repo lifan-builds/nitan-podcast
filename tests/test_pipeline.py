@@ -22,11 +22,11 @@ from extractor import (
     threads_to_source_markdown,
     tool_result_to_threads,
 )
-from notebooklm_export import (
+from castforge.export import (
     DEFAULT_MARKDOWN_NAME,
     export_for_notebooklm,
 )
-from briefing_writer import SYSTEM_PROMPT, write_briefing_markdown
+from castforge.briefing import SYSTEM_PROMPT, write_briefing_markdown
 
 SAMPLE_FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "sample_extraction.json"
 
@@ -449,7 +449,7 @@ class TestParseHelpers:
 
 
 # ---------------------------------------------------------------------------
-# notebooklm_export.py
+# castforge.export
 # ---------------------------------------------------------------------------
 
 class TestNotebookLMExport:
@@ -491,11 +491,11 @@ class TestNotebookLMExport:
 
 
 # ---------------------------------------------------------------------------
-# briefing_writer.py
+# castforge.briefing
 # ---------------------------------------------------------------------------
 
 class TestBriefingWriter:
-    """Tests for briefing_writer module."""
+    """Tests for the CastForge briefing module."""
 
     def test_system_prompt_exists_and_is_chinese(self):
         assert isinstance(SYSTEM_PROMPT, str)

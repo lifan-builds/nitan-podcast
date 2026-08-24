@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-"""Show-specific wrapper around the extracted CastForge pipeline."""
+"""Show-specific wrapper around the CastForge pipeline."""
 
 from __future__ import annotations
-
-from _castforge import ensure_castforge_on_path
-
-ensure_castforge_on_path()
 
 from castforge.pipeline import PipelineHooks, main as castforge_main
 from extractor import (

@@ -177,7 +177,7 @@ class TestGenerateRssFeed:
 
     def _run_generate(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, **kwargs):
         from extractor import _load_fixture, threads_to_source_markdown
-        from notebooklm_export import export_for_notebooklm
+        from castforge.export import export_for_notebooklm
 
         monkeypatch.setenv("EXTRACTION_FIXTURE_PATH", str(SAMPLE_FIXTURE))
         threads = _load_fixture()

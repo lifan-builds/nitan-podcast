@@ -176,7 +176,7 @@ class TestAnnouncementPost:
 class TestWriteForumPost:
 
     def test_writes_file(self, tmp_path: Path, sample_markdown: str):
-        from notebooklm_export import export_for_notebooklm
+        from castforge.export import export_for_notebooklm
         md_path = export_for_notebooklm(sample_markdown, export_dir=tmp_path, filename="test.md")
         post_path = write_forum_post(md_path)
         assert post_path.is_file()
@@ -184,14 +184,14 @@ class TestWriteForumPost:
         assert SERIES_ZH in content
 
     def test_with_prebuilt_threads(self, tmp_path: Path, sample_threads: list[dict[str, Any]]):
-        from notebooklm_export import export_for_notebooklm
+        from castforge.export import export_for_notebooklm
         md_path = export_for_notebooklm("# test", export_dir=tmp_path, filename="test.md")
         post_path = write_forum_post(md_path, threads=sample_threads)
         content = post_path.read_text(encoding="utf-8")
         assert "示例：某酒店卡史高讨论" in content
 
     def test_custom_output_path(self, tmp_path: Path, sample_markdown: str):
-        from notebooklm_export import export_for_notebooklm
+        from castforge.export import export_for_notebooklm
         md_path = export_for_notebooklm(sample_markdown, export_dir=tmp_path, filename="test.md")
         out = tmp_path / "custom_post.md"
         post_path = write_forum_post(md_path, output_path=out)

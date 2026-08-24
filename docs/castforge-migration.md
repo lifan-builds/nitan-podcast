@@ -1,106 +1,68 @@
-# CastForge Migration
+# CastForge Integration
 
-This document describes the planned split between the reusable framework repo, `castforge`, and the public show repo, `nitan-podcast`.
+Nitan Podcast uses `CastForge` for reusable pipeline stages while retaining ownership of the public show and its publication workflow. The migration is complete; this document records the current boundary so future changes do not recreate local compatibility layers.
 
-## Goal
-
-Separate reusable podcast automation from show-specific identity without breaking the public podcast feed.
-
-## Repository Roles
+## Repository roles
 
 ### `castforge`
 
-Owns:
-
-- pipeline orchestration
-- scheduling and retry logic
-- self-hosted runner setup
-- shared integrations such as Gemini and NotebookLM
-- reusable artifact and manifest contracts
+CastForge owns reusable source-to-export orchestration, briefing and export stages, NotebookLM integration, and framework contracts. Provider SDK imports remain lazy so offline extraction and validation do not require optional integrations.
 
 ### `nitan-podcast`
 
-Owns:
+Nitan owns:
 
-- Nitan MCP extraction behavior
-- thread selection rules
-- prompts, editorial rules, and forum templates
-- public assets and metadata
-- `docs/feed.xml`
-- `docs/episodes/*.mp3`
+- Nitan MCP extraction and thread-selection behavior;
+- prompts, category voice, editorial rules, and forum templates;
+- podcast metadata, RSS identity, and public compatibility tests;
+- the weekly schedule, self-hosted runner configuration, workflow gates, and publication;
+- `docs/feed.xml`, `docs/episodes/*.mp3`, and show assets.
 
-## Non-Breaking Contract
+## Runtime dependency
 
-The migration must preserve all subscriber-visible endpoints.
+`requirements.txt` is the single operational owner of CastForge. It installs the existing `v0.1.3` release tag:
 
-- Keep `https://lifan-builds.github.io/nitan-podcast/feed.xml`
-- Keep `https://lifan-builds.github.io/nitan-podcast/`
-- Keep `https://lifan-builds.github.io/nitan-podcast/episodes/weekly_meika_YYYY-Www.mp3`
-- Keep episode GUIDs in the `nitan-podcast-YYYY-Www` format
-- Keep historical files under `docs/episodes/`
+```text
+castforge @ git+https://github.com/lifan-builds/castforge.git@v0.1.3
+```
 
-If those values drift, Spotify and Apple Podcasts may treat the show as broken or new.
+The workflow creates or reuses the repository virtual environment and installs that requirements file once. It must not install another CastForge revision separately. NotebookLM browser dependencies remain optional and are installed from `requirements-integrations.txt` when the audio phase is enabled.
 
-## Execution Model
+## Canonical module boundary
 
-Each show repo owns its own workflow and schedule. CastForge is a framework dependency, not a control plane.
+`run_pipeline.py` is a thin show-specific composition layer. It imports `PipelineHooks` and `main` from `castforge.pipeline`; tests and any direct callers import reusable stages from their canonical modules:
 
-1. `nitan-podcast` triggers its own scheduled workflow.
-2. The workflow installs `castforge` as a pip dependency.
-3. `run_pipeline.py` wires show-specific hooks into the CastForge pipeline.
-4. CastForge executes the pipeline stages using those hooks.
-5. The workflow commits and pushes updated artifacts within `nitan-podcast`.
-6. GitHub Pages continues serving the feed and MP3s.
+- `castforge.briefing` — optional Gemini briefing;
+- `castforge.export` — UTF-8 Markdown export;
+- `castforge.notebooklm_audio` — `publish_audio` and `publish_audio_async`.
 
-## Migration Sequence
+Nitan no longer carries `_castforge.py` path mutation or local `briefing_writer.py`, `notebooklm_export.py`, and `notebooklm_audio.py` compatibility facades. This keeps one owner for each reusable behavior and makes a missing dependency fail at installation/configuration time instead of being hidden by a sibling checkout.
 
-### Phase 1: Stabilize contracts in `nitan-podcast`
+## Subscriber contract
 
-- centralize public URLs and GUID prefixes in `public_contract.py`
-- document the instance contract in `podcast.yaml`
-- add tests that lock feed URL, GUID, and episode URL conventions
+The integration must preserve all subscriber-visible endpoints and retained artifacts:
 
-### Phase 2: Extract framework into `castforge`
+- `https://lifan-builds.github.io/nitan-podcast/feed.xml`;
+- `https://lifan-builds.github.io/nitan-podcast/`;
+- `https://lifan-builds.github.io/nitan-podcast/episodes/weekly_meika_YYYY-Www.mp3`;
+- episode GUIDs in the `nitan-podcast-YYYY-Www` format;
+- every tracked file under `docs/episodes/`.
 
-- move generic pipeline stages
-- move workflow orchestration and runner setup
-- move integration wrappers for Gemini and NotebookLM
-- define a run manifest and artifact contract
+The CastForge migration changes code ownership only; it does not rewrite the feed, site, GUIDs, or historical media.
 
-### Phase 3: Finalize framework dependency
+## Validation
 
-- update `nitan-podcast` workflow to install `castforge` from pip/git
-- keep all scheduling and runner config in `nitan-podcast`
-- `castforge` remains a pure library with no instance-specific automation
+Run the offline suite with the current CastForge checkout when developing the two repositories together:
 
-## Initial File Mapping
+```bash
+PYTHONPATH=/path/to/castforge pytest tests/ -v
+```
 
-Move toward `castforge`:
+The fixture smoke remains offline and disposable:
 
-- `briefing_writer.py` (generic Gemini briefing)
-- `notebooklm_audio.py` (generic NotebookLM integration)
-- `notebooklm_export.py` (generic Markdown export)
-- generic pipeline orchestration (now `castforge.pipeline`)
+```bash
+EXTRACTION_FIXTURE_PATH=fixtures/sample_extraction.json \
+  python run_pipeline.py --skip-briefing --dated
+```
 
-Keep in `nitan-podcast`:
-
-- `run_pipeline.py` (thin wrapper wiring hooks into CastForge)
-- `extractor.py`
-- `publisher.py`
-- `rss_feed.py`
-- show-specific RSS defaults and templates
-- `.github/workflows/weekly-export.yml` (schedule + runner)
-- `scripts/setup_runner.sh`
-- `docs/feed.xml`
-- `docs/episodes/`
-- `assets/`
-
-## Validation Checklist
-
-Run this before and after switching automation:
-
-1. `pytest tests/ -v`
-2. `python scripts/validate_feed.py --local-only docs/feed.xml`
-3. Verify existing `<guid>` values are unchanged
-4. Verify old MP3 files still exist in `docs/episodes/`
-5. Verify new feed items still point to `audio/mpeg` assets on GitHub Pages
+Do not use live MCP, NotebookLM, forum, publication, or feed checks as generic migration validation.

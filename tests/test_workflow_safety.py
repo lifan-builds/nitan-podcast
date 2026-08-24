@@ -3,9 +3,9 @@
 from pathlib import Path
 
 
-WORKFLOW = (
-    Path(__file__).resolve().parents[1] / ".github" / "workflows" / "weekly-export.yml"
-).read_text(encoding="utf-8")
+ROOT = Path(__file__).resolve().parents[1]
+WORKFLOW = (ROOT / ".github" / "workflows" / "weekly-export.yml").read_text(encoding="utf-8")
+REQUIREMENTS = (ROOT / "requirements.txt").read_text(encoding="utf-8")
 
 
 def _step(name: str) -> str:
@@ -41,6 +41,7 @@ def test_nitan_explicitly_requests_chinese_audio() -> None:
     assert "NOTEBOOKLM_AUDIO_LANGUAGE: zh" in WORKFLOW
 
 
-def test_castforge_install_is_pinned_to_release() -> None:
-    assert "castforge.git@v0.1.0" in WORKFLOW
-    assert "castforge.git\n" not in WORKFLOW
+def test_castforge_dependency_is_pinned_in_requirements() -> None:
+    assert "castforge @ git+https://github.com/lifan-builds/castforge.git@v0.1.3" in REQUIREMENTS
+    assert "castforge.git@" not in WORKFLOW
+    assert "$PY -m pip install -q -r requirements.txt" in WORKFLOW

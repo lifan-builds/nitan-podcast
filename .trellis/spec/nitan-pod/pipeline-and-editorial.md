@@ -18,6 +18,8 @@ The Source Document owns factual Story Brief structure before any NotebookLM aud
 
 Nitan MCP topic details require the repository parser because `discourse_read_topic` returns formatted text rather than JSON. Test parser changes with captured synthetic fixtures. Do not use live forum calls as routine validation.
 
+CastForge is an installed runtime dependency pinned in `requirements.txt`. Show code imports its canonical modules (`castforge.pipeline`, `castforge.briefing`, `castforge.export`, and `castforge.notebooklm_audio`) directly; do not add sibling-repository path mutation or local compatibility facades. CastForge keeps NotebookLM and other provider SDK imports lazy so extraction, export, and offline tests do not require optional integrations.
+
 ## Scenario: Atomic audio publication
 
 ### 1. Scope / Trigger
