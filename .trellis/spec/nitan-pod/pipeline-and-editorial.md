@@ -72,57 +72,8 @@ if: steps.check.outputs.skip != 'true'
 if: steps.release.outputs.audio_url != ''
 ```
 
-## Scenario: Evidence-gated AI briefing publication
+## Ownership boundary
 
-### 1. Scope / Trigger
-
-- Applies to CastForge-powered shows that monitor sources daily but publish only when editorial evidence passes a minimum-story gate.
-
-### 2. Signatures
-
-- `SourceItem.authority`: `primary | independent | analysis | signal`.
-- `StoryCluster.kind`: `development | expert_analysis`.
-- `SelectionConfig.min_stories: int`.
-- `run_episode(...) -> EpisodeManifest | NoEpisodeResult`.
-
-### 3. Contracts
-
-- `analysis` qualifies an attributed expert observation only; technical claims still require a primary artifact or two independent reports.
-- Show-owned selection must complete before NotebookLM runs. Fewer than `min_stories` returns `no-episode` without audio or RSS mutation.
-- Editorial infrastructure failure is a successful no-publication outcome, not permission to fall back to fixed-score filler.
-- Generated MP3 duration is measured from the file and written to the manifest/RSS. Audio beyond the configured ceiling retries once at `short`, then fails closed.
-- Public ledgers contain candidate evidence, deterministic rejection or structured review, momentum/recency signals, and selection outcome; secrets and authenticated state never enter artifacts.
-
-### 4. Validation & Error Matrix
-
-| Condition | Required behavior |
-| --- | --- |
-| Fewer than minimum qualifying developments | Return `no-episode`; leave RSS unchanged |
-| Usage gate, local proxy, or strict schema fails | Retain an unpublished ledger artifact; leave RSS unchanged |
-| Optional X source fails | Continue without X; do not weaken factual qualification |
-| Audio exceeds ceiling after short retry | Fail before upload/RSS |
-| Duration probe fails | Fail before upload/RSS |
-
-### 5. Good/Base/Bad Cases
-
-- Good: three evidence-qualified developments pass structured review, measured audio is within the ceiling, and the ledger/feed publish atomically.
-- Base: only two developments qualify; the run records `no-episode` and publishes nothing.
-- Bad: publishing routine cloud availability or CI updates because the calendar expects a daily episode.
-
-### 6. Tests Required
-
-- Historical filler rejection, exact strict-schema coverage, weighted thresholds, iterative diversity penalties, and one deep item.
-- Analysis-only attribution versus uncorroborated technical claims.
-- Optional X failure, collector/proxy/schema failure, minimum-story no-episode behavior, measured signal deltas, duration retry, and feed immutability.
-
-### 7. Wrong vs Correct
-
-```python
-# Wrong: narration receives the top fixed-score items even when they are filler.
-stories = sorted(candidates, key=score, reverse=True)[:5]
-
-# Correct: deterministic evidence gates and structured editorial review run first.
-stories = select_qualified_candidates(candidates)
-if len(stories) < config.selection.min_stories:
-    return NoEpisodeResult(reason="fewer than minimum qualifying stories")
-```
+AI Builder Brief's daily AI-news collection, ranking, review-only artifacts,
+and consequential-news policy belong to the separate `ai-builder-brief`
+repository. They are not Nitan podcast pipeline contracts or audit records.
