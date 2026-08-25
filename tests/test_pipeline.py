@@ -517,58 +517,6 @@ class TestBriefingWriter:
 
 
 # ---------------------------------------------------------------------------
-# run_pipeline.py -- argument parsing
-# ---------------------------------------------------------------------------
-
-class TestRunPipelineArgParsing:
-    """Tests for CLI argument parsing in run_pipeline.main()."""
-
-    def _parse(self, argv: list[str]) -> Any:
-        """Parse arguments without running the pipeline."""
-        import argparse
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--env-file", type=Path, default=Path(".env"))
-        parser.add_argument("--skip-briefing", action="store_true")
-        parser.add_argument("--export-dir", type=Path, default=None)
-        parser.add_argument("--output-filename", default=None)
-        parser.add_argument("--dated", action="store_true")
-        parser.add_argument("--log-level", default="INFO")
-        parser.add_argument("--list-mcp-tools", action="store_true")
-        parser.add_argument("--publish-notebooklm", action="store_true")
-        parser.add_argument("--notebooklm-audio-out", type=Path, default=None)
-        return parser.parse_args(argv)
-
-    def test_defaults(self):
-        args = self._parse([])
-        assert args.skip_briefing is False
-        assert args.dated is False
-        assert args.publish_notebooklm is False
-        assert args.export_dir is None
-
-    def test_skip_briefing_flag(self):
-        args = self._parse(["--skip-briefing"])
-        assert args.skip_briefing is True
-
-    def test_dated_flag(self):
-        args = self._parse(["--dated"])
-        assert args.dated is True
-
-    def test_publish_notebooklm_flag(self):
-        args = self._parse(["--publish-notebooklm"])
-        assert args.publish_notebooklm is True
-
-    def test_export_dir_argument(self):
-        args = self._parse(["--export-dir", "/tmp/out"])
-        assert args.export_dir == Path("/tmp/out")
-
-    def test_combined_flags(self):
-        args = self._parse(["--skip-briefing", "--dated", "--publish-notebooklm"])
-        assert args.skip_briefing is True
-        assert args.dated is True
-        assert args.publish_notebooklm is True
-
-
-# ---------------------------------------------------------------------------
 # Integration smoke test
 # ---------------------------------------------------------------------------
 
