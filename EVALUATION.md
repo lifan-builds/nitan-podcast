@@ -6,7 +6,7 @@ Objective grading criteria and verification contracts for work tracked in [`PLAN
 
 - **Functionality:** Pipeline produces UTF-8 Markdown; optional publish uploads + downloads MP3; failures exit non-zero with actionable logs.
 - **Code Quality:** Match existing style; lazy optional imports; no secrets in repo.
-- **Testing:** 137 offline pytest tests; live MCP + publish verified manually.
+- **Testing:** 131 offline pytest tests; live MCP + publish verified manually.
 
 ## Active Sprint Contracts
 
