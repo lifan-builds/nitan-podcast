@@ -141,7 +141,7 @@ if len(stories) < config.selection.min_stories:
 
 ### 3. Contracts
 
-- Preserve candidate input order and slice it into deterministic batches of at most six. Every batch runs the usage gate, GPT-5.6 Terra strict JSON Schema request, and a 60-second request timeout.
+- Preserve candidate input order and slice it into deterministic batches of at most six. Every batch runs the usage gate, GPT-6 Luna strict JSON Schema request, and a 60-second request timeout.
 - Validate each batch's schema values and exact one-decision-per-candidate coverage before merging. Perform the existing global exact-coverage validation after merging.
 - Any usage-gate, timeout, proxy, malformed-response, missing-candidate, duplicate-candidate, or validation failure returns `no-episode` before NotebookLM.
 - Unpublished failure ledgers may contain only `failure_type`, `stage`, and a positive one-based `batch_index`; never persist exception text, request headers, response bodies, credentials, cookies, or authenticated URLs.
