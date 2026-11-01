@@ -113,7 +113,7 @@ before collecting forum content. Export-only and supplied-audio runs skip it.
 
 This repo owns its own weekly schedule and GitHub Actions workflow. Pipeline execution is powered by `CastForge`, installed from the `v0.1.3` tag through `requirements.txt`. The workflow does not install a second CastForge copy.
 
-The workflow runs on a **self-hosted macOS runner** with three Monday retry windows (6 AM / 12 PM / 6 PM PST). First success publishes the episode; subsequent triggers skip.
+The workflow runs on a **self-hosted macOS runner** with three Sunday retry windows (6 AM / 12 PM / 6 PM PST; 7 AM / 1 PM / 7 PM PDT). First success publishes the episode; subsequent triggers skip. Episode weeks use `America/Los_Angeles`, including the evening retry that falls on Monday in UTC.
 
 Pipeline phases:
 
