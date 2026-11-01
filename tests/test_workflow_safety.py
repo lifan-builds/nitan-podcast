@@ -19,6 +19,38 @@ def test_audio_failure_is_not_ignored() -> None:
     assert "continue-on-error" not in _step("Generate audio (NotebookLM)")
 
 
+def test_audio_format_is_verified_before_publication_and_duration_reaches_rss() -> None:
+    audio = _step("Generate audio (NotebookLM)")
+    assert audio.index("scripts/prepare_audio.py") < audio.index("has_audio=true")
+    assert "steps.audio.outputs.duration" in _step("Generate RSS feed and forum post")
+
+
+def test_auth_is_checked_before_extraction_only_when_audio_is_needed() -> None:
+    name = "Check NotebookLM login and notebook"
+    assert WORKFLOW.index(name) < WORKFLOW.index("Extract and export Markdown")
+    step = _step(name)
+    for condition in (
+        "steps.check.outputs.skip != 'true'",
+        "inputs.skip_audio != true",
+        "inputs.audio_url == ''",
+    ):
+        assert condition in step
+    assert "continue-on-error" not in step
+
+
+def test_failed_steps_are_not_reported_as_completed() -> None:
+    summary = _step("Job summary")
+    assert "Export: done" not in summary
+    assert "RSS: updated" not in summary
+    for step in ("export", "notebooklm_auth", "feed", "publish", "validate"):
+        assert f"steps.{step}.outcome" in summary
+
+
+def test_publication_runs_do_not_overlap_or_cancel_an_active_publish() -> None:
+    assert "group: weekly-podcast-publication" in WORKFLOW
+    assert "cancel-in-progress: false" in WORKFLOW
+
+
 def test_publication_steps_require_a_released_audio_url() -> None:
     for name in (
         "Generate RSS feed and forum post",

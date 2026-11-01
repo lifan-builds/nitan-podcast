@@ -94,7 +94,20 @@ For `--publish-notebooklm` using [notebooklm-py](https://github.com/teng-lin/not
 2. Run `notebooklm login`
 3. Set `NOTEBOOKLM_NOTEBOOK_ID` in `.env`
 
-The login stores `~/.notebooklm/storage_state.json`; it is separate from a normal Chrome Google sign-in.
+The SDK saves a separate login from your normal Chrome Google sign-in. Current
+versions use `~/.notebooklm/profiles/default/storage_state.json`, with a fallback
+for older installations. Set `NOTEBOOKLM_STORAGE_PATH` to select an explicit file.
+
+If a scheduled run reports expired authentication, run
+`.venv/bin/python scripts/check_notebooklm_auth.py --env-file "$HOME/.nitan-podcast/.env"`
+from the runner checkout. Follow its login command on the runner Mac, complete
+Google sign-in locally, and run the check again before retrying the workflow.
+The recovery command uses system Chrome and `--fresh` to discard the SDK's stale
+browser session; it does not reset your ordinary Chrome profile. A login command
+reporting that it saved authentication is not enough: the preflight must pass.
+Do not put session files, passwords, or login codes in GitHub secrets or logs.
+The preflight checks both the saved login and access to the configured notebook
+before collecting forum content. Export-only and supplied-audio runs skip it.
 
 ## Automation
 
@@ -104,14 +117,20 @@ The workflow runs on a **self-hosted macOS runner** with three Monday retry wind
 
 Pipeline phases:
 
+0. Verify NotebookLM login and notebook access when generating audio
 1. MCP extract + optional Gemini briefing + export Markdown
-2. NotebookLM Audio Overview + download MP3
+2. NotebookLM Audio Overview + download, normalize to real MP3, measure duration
 3. GitHub Release (backup) + copy MP3 to `docs/episodes/`
 4. Generate RSS feed + forum post draft
 5. Commit + push (GitHub Pages auto-deploys)
 6. Validate live feed
 
 **Manual trigger:** Actions tab, `weekly-podcast`, Run workflow.
+
+Install FFmpeg on the runner (`brew install ffmpeg`). NotebookLM may return AAC
+inside an MP4 container even when the requested filename ends in `.mp3`.
+`scripts/prepare_audio.py` checks the actual format, converts when needed, and
+returns the measured duration for RSS. Publication stops if this check fails.
 
 ## Development
 
