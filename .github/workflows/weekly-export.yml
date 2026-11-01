@@ -10,7 +10,7 @@
 # Self-hosted runner prerequisites:
 #   - Python 3.10+ venv at .venv/ with requirements.txt installed
 #   - ~/.nitan-podcast/.env configured (MCP_SERVER_*, NOTEBOOKLM_*, optional GEMINI_API_KEY)
-#   - notebooklm login completed (~/.notebooklm/storage_state.json)
+#   - notebooklm login completed (same storage/profile as NOTEBOOKLM_STORAGE_PATH)
 #   - gh auth login completed
 #   - Node.js 20+ (for npx / nitan-mcp)
 #
@@ -36,6 +36,11 @@ on:
 
 permissions:
   contents: write
+
+# Never overlap two attempts to publish the same weekly release/feed.
+concurrency:
+  group: weekly-podcast-publication
+  cancel-in-progress: false
 
 jobs:
   weekly-podcast:
@@ -91,6 +96,14 @@ jobs:
           if [ -f requirements-integrations.txt ]; then
             $PY -m pip install -q -r requirements-integrations.txt
           fi
+
+      - name: Check NotebookLM login and notebook
+        if: >-
+          steps.check.outputs.skip != 'true'
+          && inputs.skip_audio != true
+          && inputs.audio_url == ''
+        id: notebooklm_auth
+        run: $PY scripts/check_notebooklm_auth.py
 
       # --- Phase 1: Extract + Export (headless, single MCP call) ---
       - name: Extract and export Markdown
@@ -152,6 +165,7 @@ jobs:
         if: >-
           steps.check.outputs.skip != 'true'
           && steps.release.outputs.audio_url != ''
+        id: feed
         run: |
           AUDIO_URL="${{ steps.release.outputs.audio_url }}"
           MP3="${{ steps.audio.outputs.mp3_path }}"
@@ -173,6 +187,7 @@ jobs:
         if: >-
           steps.check.outputs.skip != 'true'
           && steps.release.outputs.audio_url != ''
+        id: publish
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -187,6 +202,7 @@ jobs:
         if: >-
           steps.check.outputs.skip != 'true'
           && steps.release.outputs.audio_url != ''
+        id: validate
         run: |
           $PY scripts/validate_feed.py --wait-for-deploy 120 \
             --expected-audio-url "${{ steps.release.outputs.audio_url }}"
@@ -210,7 +226,8 @@ jobs:
           if [ "${{ steps.check.outputs.skip }}" = "true" ]; then
             echo "- **Skipped** — already published this week" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- Export: done" >> $GITHUB_STEP_SUMMARY
+            echo "- NotebookLM preflight: ${{ steps.notebooklm_auth.outcome }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Export: ${{ steps.export.outcome }}" >> $GITHUB_STEP_SUMMARY
             if [ "${{ steps.audio.outputs.has_audio }}" = "true" ]; then
               echo "- Audio: done (${{ steps.release.outputs.audio_url }})" >> $GITHUB_STEP_SUMMARY
             elif [ "${{ steps.audio.outcome }}" = "failure" ]; then
@@ -218,10 +235,10 @@ jobs:
             else
               echo "- Audio: skipped" >> $GITHUB_STEP_SUMMARY
             fi
-            if [ -n "${{ steps.release.outputs.audio_url }}" ]; then
-              echo "- RSS: updated" >> $GITHUB_STEP_SUMMARY
+            echo "- Feed generation: ${{ steps.feed.outcome }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Feed push: ${{ steps.publish.outcome }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Live feed validation: ${{ steps.validate.outcome }}" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ steps.feed.outcome }}" = "success" ]; then
               echo "- Forum post: ready in exports/" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- RSS: not published" >> $GITHUB_STEP_SUMMARY
             fi
           fi

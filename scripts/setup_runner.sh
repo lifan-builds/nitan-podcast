@@ -66,17 +66,14 @@ else
   fail ".env not found — copy .env.example to .env and configure"
 fi
 
-# NotebookLM session
-STORAGE="$HOME/.notebooklm/storage_state.json"
-if [ -f "$STORAGE" ]; then
-  ok "NotebookLM session: $STORAGE"
-else
-  fail "NotebookLM session not found — run: notebooklm login"
-fi
-
 # notebooklm-py
 if "$ROOT/.venv/bin/python" -c "import notebooklm" 2>/dev/null; then
   ok "notebooklm-py installed"
+  if "$ROOT/.venv/bin/python" "$ROOT/scripts/check_notebooklm_auth.py" --env-file "$ROOT/.env"; then
+    ok "NotebookLM login and notebook access verified"
+  else
+    fail "NotebookLM preflight failed — follow the recovery message above"
+  fi
 else
   warn "notebooklm-py not installed — run: .venv/bin/pip install -r requirements-integrations.txt && playwright install chromium"
 fi
