@@ -19,6 +19,12 @@ def test_audio_failure_is_not_ignored() -> None:
     assert "continue-on-error" not in _step("Generate audio (NotebookLM)")
 
 
+def test_audio_format_is_verified_before_publication_and_duration_reaches_rss() -> None:
+    audio = _step("Generate audio (NotebookLM)")
+    assert audio.index("scripts/prepare_audio.py") < audio.index("has_audio=true")
+    assert "steps.audio.outputs.duration" in _step("Generate RSS feed and forum post")
+
+
 def test_auth_is_checked_before_extraction_only_when_audio_is_needed() -> None:
     name = "Check NotebookLM login and notebook"
     assert WORKFLOW.index(name) < WORKFLOW.index("Extract and export Markdown")

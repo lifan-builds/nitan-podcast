@@ -119,13 +119,18 @@ Pipeline phases:
 
 0. Verify NotebookLM login and notebook access when generating audio
 1. MCP extract + optional Gemini briefing + export Markdown
-2. NotebookLM Audio Overview + download MP3
+2. NotebookLM Audio Overview + download, normalize to real MP3, measure duration
 3. GitHub Release (backup) + copy MP3 to `docs/episodes/`
 4. Generate RSS feed + forum post draft
 5. Commit + push (GitHub Pages auto-deploys)
 6. Validate live feed
 
 **Manual trigger:** Actions tab, `weekly-podcast`, Run workflow.
+
+Install FFmpeg on the runner (`brew install ffmpeg`). NotebookLM may return AAC
+inside an MP4 container even when the requested filename ends in `.mp3`.
+`scripts/prepare_audio.py` checks the actual format, converts when needed, and
+returns the measured duration for RSS. Publication stops if this check fails.
 
 ## Development
 

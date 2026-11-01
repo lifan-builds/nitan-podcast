@@ -13,6 +13,7 @@
 #   - notebooklm login completed (same storage/profile as NOTEBOOKLM_STORAGE_PATH)
 #   - gh auth login completed
 #   - Node.js 20+ (for npx / nitan-mcp)
+#   - ffmpeg and ffprobe (brew install ffmpeg)
 #
 # See scripts/setup_runner.sh for one-time setup.
 
@@ -130,6 +131,8 @@ jobs:
           MP3="releases/weekly_meika_${{ steps.week.outputs.iso_week }}.mp3"
           $PY run_pipeline.py --markdown-input "${{ steps.export.outputs.md_path }}" \
             --publish-notebooklm --notebooklm-audio-out "$MP3" --log-level INFO
+          DURATION=$($PY scripts/prepare_audio.py "$MP3")
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
           echo "mp3_path=$MP3" >> $GITHUB_OUTPUT
           echo "has_audio=true" >> $GITHUB_OUTPUT
 
@@ -178,7 +181,7 @@ jobs:
             FLAGS="$FLAGS --audio-url $AUDIO_URL"
           fi
           if [ -n "$MP3" ] && [ -f "$MP3" ]; then
-            FLAGS="$FLAGS --mp3-path $MP3"
+            FLAGS="$FLAGS --mp3-path $MP3 --episode-duration ${{ steps.audio.outputs.duration }}"
           fi
           $PY run_pipeline.py $FLAGS
 

@@ -40,6 +40,15 @@ else
   fail "Node.js not found — needed for npx / nitan-mcp"
 fi
 
+# Audio tools
+for tool in ffmpeg ffprobe; do
+  if command -v "$tool" &>/dev/null; then
+    ok "$tool available"
+  else
+    fail "$tool not found — install: brew install ffmpeg"
+  fi
+done
+
 # gh CLI
 if command -v gh &>/dev/null; then
   if gh auth status &>/dev/null; then
