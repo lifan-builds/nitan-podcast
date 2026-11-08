@@ -4,149 +4,198 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Nitan Podcast（泥潭播客）：每周六分钟，把美卡论坛热门讨论整理成有来源可查的中文短播客。" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23c2410c'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-size='18' font-weight='700' fill='%23fff'%3EN%3C/text%3E%3C/svg%3E" />
     <title>泥潭播客 · Nitan Podcast</title>
     <style>
       :root {
         color-scheme: light;
-        --bg: #f8fafc;
+        --bg: #eaf0f4;
+        --surface: #f7fafc;
         --panel: #ffffff;
-        --subtle: #f1f5f9;
-        --text: #0f172a;
-        --muted: #475569;
+        --code-bg: #101c26;
+        --code-sub: #0c1720;
+        --code-ink: #e6f0f7;
+        --code-control: #203444;
+        --code-control-hover: #2b4559;
+        --code-border: #38556b;
+        --text: #0c1720;
+        --muted: #344b5c;
         --accent: #c2410c;
         --accent-hover: #9a3412;
         --accent-soft: #fff7ed;
-        --line: #e2e8f0;
-        --line-strong: #cbd5e1;
+        --line: #c4d1dc;
+        --line-strong: #9fb2c2;
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+        --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, ui-monospace, monospace;
       }
+
       * { box-sizing: border-box; }
-      ::selection { background: #ffedd5; color: var(--text); }
+      ::selection { background: var(--accent); color: var(--panel); }
+
       body {
         margin: 0;
         background-color: var(--bg);
         color: var(--text);
-        font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+        font: 16px/1.65 var(--font-sans);
         -webkit-font-smoothing: antialiased;
       }
-      a { color: inherit; text-underline-offset: 0.2em; }
+
+      a { color: var(--accent); text-underline-offset: 0.2em; }
+      a:hover { color: var(--accent-hover); }
+
       a:focus-visible, button:focus-visible, summary:focus-visible {
-        outline: 2px solid var(--accent);
+        outline: 2.5px solid var(--accent);
         outline-offset: 3px;
         border-radius: 6px;
       }
+
       main {
-        width: min(920px, calc(100% - 2.5rem));
+        width: min(960px, calc(100% - 2.5rem));
         margin: 0 auto;
         padding: 24px 0 64px;
       }
+
       .topbar {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
+        flex-wrap: wrap;
         padding-bottom: 18px;
         border-bottom: 1px solid var(--line);
       }
+
+      .brand-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
       .brand {
         font-weight: 700;
+        color: var(--text);
         text-decoration: none;
         font-size: 16px;
       }
+
       .badge {
         display: inline-flex;
         align-items: center;
         padding: 3px 10px;
-        border-radius: 999px;
+        border-radius: 6px;
         background-color: var(--accent-soft);
-        border: 1px solid #fed7aa;
+        border: 1px solid #fdba74;
         color: var(--accent);
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
         font-size: 12px;
         font-weight: 600;
       }
+
       .topnav {
         display: flex;
         flex-wrap: wrap;
         gap: 16px;
         font-size: 14px;
-        color: var(--muted);
+        font-weight: 600;
       }
-      .topnav a { text-decoration: none; }
-      .topnav a:hover { color: var(--text); }
+
+      .topnav a { color: var(--muted); text-decoration: none; }
+      .topnav a:hover { color: var(--text); text-decoration: underline; }
+
       .hero {
         display: grid;
         grid-template-columns: 112px 1fr;
         gap: 24px;
         align-items: start;
-        padding: 40px 0 36px;
-        border-bottom: 1px solid var(--line);
+        padding: 40px 0 32px;
       }
-      .hero > div {
-        min-width: 0;
-      }
+
+      .hero > div { min-width: 0; }
+
       .cover {
         width: 112px;
         height: 112px;
-        border-radius: 18px;
-        border: 1px solid var(--line);
+        border-radius: 16px;
+        border: 1px solid var(--line-strong);
         object-fit: cover;
       }
+
       h1 {
         margin: 0 0 10px;
-        font-size: clamp(2rem, 4.5vw, 2.9rem);
+        font-size: clamp(2rem, 4.4vw, 2.85rem);
         line-height: 1.12;
         letter-spacing: -0.03em;
+        font-weight: 800;
       }
+
       .lede {
         margin: 0 0 18px;
         max-width: 44rem;
         color: var(--muted);
         font-size: 17px;
       }
+
       .rss-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        max-width: 560px;
+        max-width: 590px;
         min-width: 0;
-        padding: 8px 10px 8px 14px;
-        background-color: var(--panel);
-        border: 1px solid var(--line-strong);
+        padding: 9px 12px 9px 14px;
+        background-color: var(--code-bg);
+        color: var(--code-ink);
+        border: 1px solid var(--code-border);
         border-radius: 10px;
         margin-bottom: 16px;
       }
+
       .rss-bar code {
         flex: 1;
         min-width: 0;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-family: var(--font-mono);
         font-size: 13px;
-        color: var(--text);
-        overflow-x: auto;
-        white-space: nowrap;
+        color: var(--code-ink);
+        overflow-wrap: anywhere;
+        line-height: 1.45;
       }
+
       .copy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         flex: none;
         padding: 5px 11px;
-        border: 1px solid var(--line-strong);
-        border-radius: 7px;
-        background-color: var(--subtle);
-        color: var(--text);
-        font: inherit;
+        border: 1px solid var(--code-border);
+        border-radius: 6px;
+        background-color: var(--code-control);
+        color: var(--code-ink);
+        font-family: var(--font-sans);
         font-size: 12.5px;
         font-weight: 600;
         cursor: pointer;
+        transition: background-color 140ms ease, border-color 140ms ease;
       }
-      .copy-btn:hover { background-color: var(--line); }
+
+      .copy-btn:hover { background-color: var(--code-control-hover); }
+      .copy-btn .icon-check { display: none; }
+      .copy-btn.is-copied { border-color: #26997f; color: #b0e2d5; }
+      .copy-btn.is-copied .icon-clip { display: none; }
+      .copy-btn.is-copied .icon-check { display: block; }
+
       .actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
       }
+
       .button {
         display: inline-flex;
         align-items: center;
         border: 1px solid var(--line-strong);
-        border-radius: 9px;
+        border-radius: 8px;
         padding: 8px 15px;
         background-color: var(--panel);
         color: var(--text);
@@ -154,63 +203,224 @@
         font-size: 14px;
         font-weight: 600;
       }
-      .button:hover { background-color: var(--subtle); }
+
+      .button:hover { background-color: var(--surface); color: var(--text); }
+
       .button.primary {
         color: #ffffff;
         background-color: var(--accent);
         border-color: var(--accent);
       }
-      .button.primary:hover { background-color: var(--accent-hover); }
+
+      .button.primary:hover { background-color: var(--accent-hover); color: #ffffff; }
+
+      /* Waveform & Episode Telemetry Schematic Header */
+      .telemetry-banner {
+        padding: 14px 16px;
+        background-color: var(--panel);
+        border: 1px solid var(--line-strong);
+        border-radius: 14px;
+        margin-bottom: 8px;
+      }
+
+      .telemetry-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
       .section-head {
         display: flex;
-        align-items: baseline;
+        align-items: flex-end;
         justify-content: space-between;
         gap: 1rem;
-        padding: 32px 0 12px;
+        flex-wrap: wrap;
+        padding: 28px 0 14px;
         border-bottom: 1px solid var(--line);
       }
+
+      .section-head-left {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
       h2 { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
-      #episode-count { margin: 0; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+      #episode-count {
+        margin: 0;
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 13.5px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Recessed Segmented Pill Speed Switcher */
+      .speed-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--bg);
+        padding: 3px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+      }
+
+      .speed-btn {
+        background: transparent;
+        color: var(--muted);
+        border: none;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 140ms ease, color 140ms ease;
+      }
+
+      .speed-btn:hover { color: var(--text); }
+      .speed-btn[aria-selected="true"] { background: var(--accent); color: #ffffff; }
+      .speed-btn:active { transform: translateY(1px); }
+
       #episodes { display: grid; gap: 12px; padding: 18px 0 32px; }
-      article {
+
+      article.ep-card {
         padding: 18px 20px;
         background-color: var(--panel);
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-strong);
         border-radius: 12px;
       }
-      article h3 { margin: 0 0 4px; font-size: 16.5px; }
-      article time { color: var(--muted); font-size: 13.5px; font-variant-numeric: tabular-nums; }
-      audio { width: 100%; margin: 12px 0 6px; }
+
+      .ep-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      article.ep-card h3 { margin: 0; font-size: 16.5px; }
+      article.ep-card time { color: var(--muted); font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+      /* Tactile Episode Controls with tabular-nums Timecodes */
+      .ep-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 8px 0 10px;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .ep-transport {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .play-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border: 1px solid var(--accent);
+        border-radius: 7px;
+        background: var(--accent);
+        color: #ffffff;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .play-toggle:hover { background: var(--accent-hover); }
+      .play-toggle:active { transform: translateY(1px); }
+
+      .ep-timecode {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .ep-chapters {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .cue-btn {
+        padding: 3px 8px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .cue-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .cue-btn:active { transform: translateY(1px); }
+
+      .ep-player { width: 100%; margin: 10px 0 6px; }
+
       details { color: var(--muted); font-size: 14px; }
       details summary { cursor: pointer; font-weight: 600; color: var(--text); }
       .description { white-space: pre-wrap; margin: 10px 0 0; line-height: 1.6; }
       .description a { color: var(--accent); font-weight: 500; }
+
       details.archive-more {
         padding: 14px 18px;
         background-color: var(--panel);
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-strong);
         border-radius: 12px;
       }
+
       .archive-list {
         display: grid;
-        gap: 12px;
-        margin-top: 14px;
+        margin-top: 10px;
       }
+
+      .archive-list article.ep-card {
+        border: none;
+        border-top: 1px solid var(--line);
+        border-radius: 0;
+        padding: 16px 0;
+      }
+
       .meta-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        padding: 0 0 36px;
-      }
-      .meta-card {
-        padding: 18px 20px;
         background-color: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 12px;
+        border: 1px solid var(--line-strong);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 36px;
       }
+
+      .meta-card {
+        padding: 18px 22px;
+      }
+
+      .meta-card + .meta-card {
+        border-left: 1px solid var(--line);
+      }
+
       .meta-card h3 { margin: 0 0 6px; font-size: 16px; }
       .meta-card p { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
       .meta-card p:last-child { margin-bottom: 0; }
+
       footer {
         padding-top: 22px;
         border-top: 1px solid var(--line);
@@ -221,10 +431,12 @@
         justify-content: space-between;
         gap: 12px;
       }
-      @media (max-width: 650px) {
-        .hero { grid-template-columns: 1fr; gap: 16px; padding: 28px 0; }
+
+      @media (max-width: 720px) {
+        .hero { grid-template-columns: 1fr; gap: 16px; padding: 28px 0 22px; }
         .cover { width: 84px; height: 84px; border-radius: 14px; }
         .meta-grid { grid-template-columns: 1fr; }
+        .meta-card + .meta-card { border-left: none; border-top: 1px solid var(--line); }
         .topbar { flex-direction: column; align-items: flex-start; }
       }
     </style>
@@ -232,9 +444,9 @@
   <body>
     <main>
       <header class="topbar">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="brand-wrap">
           <a class="brand" href="./">泥潭播客 · Nitan Podcast</a>
-          <span class="badge">每周更新 · 六分钟中文短播客</span>
+          <span class="badge">每周更新 · 06:00 中文短播客</span>
         </div>
         <nav class="topnav" aria-label="顶部导航">
           <a href="#episodes-title">节目归档</a>
@@ -249,8 +461,14 @@
           <h1>泥潭播客</h1>
           <p class="lede">把美卡论坛一周的热门讨论整理成六分钟短播客：事实先讲清，再听社区里的实测经验、分歧与意外发现。</p>
           <div class="rss-bar" role="region" aria-label="RSS 订阅地址">
-            <code id="rssUrl">https://lifan-builds.github.io/nitan-podcast/feed.xml</code>
-            <button type="button" class="copy-btn" id="copyRss">复制 RSS</button>
+            <code id="rssUrl" aria-live="polite">https://lifan-builds.github.io/nitan-podcast/feed.xml</code>
+            <button type="button" class="copy-btn" id="copyRss" aria-live="polite">
+              <svg class="copy-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+                <path class="icon-clip" fill="currentColor" d="M5.75 1a.75.75 0 0 0-.75.75v3c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-3a.75.75 0 0 0-.75-.75h-4.5Zm.75 3V2.5h3V4h-3Zm-2.874-.467a.75.75 0 0 0-.752-1.298A1.75 1.75 0 0 0 2 3.75v9.5c0 .966.784 1.75 1.75 1.75h8.5A1.75 1.75 0 0 0 14 13.25v-9.5a.75.75 0 0 0-.874-1.515.75.75 0 1 0-.752 1.298.25.25 0 0 1 .126.217v9.5a.25.25 0 0 1-.25.25h-8.5a.25.25 0 0 1-.25-.25v-9.5a.25.25 0 0 1 .126-.217Z"/>
+                <path class="icon-check" fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>
+              </svg>
+              <span class="copy-label">复制 RSS</span>
+            </button>
           </div>
           <nav class="actions" aria-label="订阅与项目链接">
             <a class="button primary" href="https://podcasts.apple.com/us/podcast/nitan-podcast/id1888784962">Apple Podcasts</a>
@@ -261,10 +479,76 @@
         </div>
       </section>
 
+      <div class="telemetry-banner" aria-hidden="true">
+        <svg class="telemetry-svg" viewBox="0 0 880 100" aria-hidden="true">
+          <rect x="0" y="0" width="880" height="100" rx="8" fill="#eaf0f4" />
+
+          <!-- Left Episode Telemetry Readout -->
+          <rect x="10" y="10" width="214" height="80" rx="6" fill="#101c26" />
+          <text x="22" y="32" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#fdba74" id="svg-ep-label">WEEKLY BRIEF · 06:00</text>
+          <text x="22" y="53" font-family="JetBrains Mono, monospace" font-size="9" fill="#e6f0f7">7 篇精选热帖 · 原帖链接校验</text>
+          <text x="22" y="74" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700" fill="#6bc2ad" id="svg-time-readout">00:00 / 06:00 · 1.00×</text>
+
+          <!-- Center Waveform Stage -->
+          <rect x="234" y="10" width="422" height="80" rx="6" fill="#ffffff" stroke="#9fb2c2" stroke-width="1" />
+          <text x="248" y="28" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700" fill="#c2410c">双人对话声纹 · -16 LUFS</text>
+          <text x="642" y="28" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#344b5c">00:00 · 01:30 · 04:15 · 06:00</text>
+
+          <g id="svg-wave-bars">
+            <rect x="250" y="54" width="6" height="18" rx="2" fill="#c2410c" />
+            <rect x="262" y="44" width="6" height="34" rx="2" fill="#c2410c" />
+            <rect x="274" y="38" width="6" height="42" rx="2" fill="#c2410c" />
+            <rect x="286" y="48" width="6" height="28" rx="2" fill="#c2410c" />
+            <rect x="298" y="40" width="6" height="38" rx="2" fill="#c2410c" />
+            <rect x="310" y="52" width="6" height="22" rx="2" fill="#c2410c" />
+            <rect x="322" y="36" width="6" height="44" rx="2" fill="#c2410c" />
+            <rect x="334" y="46" width="6" height="30" rx="2" fill="#c2410c" />
+            <rect x="346" y="42" width="6" height="36" rx="2" fill="#c4d1dc" />
+            <rect x="358" y="50" width="6" height="24" rx="2" fill="#c4d1dc" />
+            <rect x="370" y="38" width="6" height="42" rx="2" fill="#c4d1dc" />
+            <rect x="382" y="45" width="6" height="32" rx="2" fill="#c4d1dc" />
+            <rect x="394" y="53" width="6" height="20" rx="2" fill="#c4d1dc" />
+            <rect x="406" y="39" width="6" height="40" rx="2" fill="#c4d1dc" />
+            <rect x="418" y="43" width="6" height="35" rx="2" fill="#c4d1dc" />
+            <rect x="430" y="51" width="6" height="23" rx="2" fill="#c4d1dc" />
+            <rect x="442" y="37" width="6" height="43" rx="2" fill="#c4d1dc" />
+            <rect x="454" y="46" width="6" height="30" rx="2" fill="#c4d1dc" />
+            <rect x="466" y="41" width="6" height="37" rx="2" fill="#c4d1dc" />
+            <rect x="478" y="52" width="6" height="21" rx="2" fill="#c4d1dc" />
+            <rect x="490" y="38" width="6" height="41" rx="2" fill="#c4d1dc" />
+            <rect x="502" y="45" width="6" height="31" rx="2" fill="#c4d1dc" />
+            <rect x="514" y="49" width="6" height="25" rx="2" fill="#c4d1dc" />
+            <rect x="526" y="37" width="6" height="43" rx="2" fill="#c4d1dc" />
+            <rect x="538" y="44" width="6" height="33" rx="2" fill="#c4d1dc" />
+            <rect x="550" y="51" width="6" height="22" rx="2" fill="#c4d1dc" />
+            <rect x="562" y="40" width="6" height="38" rx="2" fill="#c4d1dc" />
+            <rect x="574" y="47" width="6" height="28" rx="2" fill="#c4d1dc" />
+            <rect x="586" y="39" width="6" height="40" rx="2" fill="#c4d1dc" />
+            <rect x="598" y="48" width="6" height="27" rx="2" fill="#c4d1dc" />
+            <rect x="610" y="43" width="6" height="34" rx="2" fill="#c4d1dc" />
+            <rect x="622" y="53" width="6" height="19" rx="2" fill="#c4d1dc" />
+            <rect x="634" y="56" width="6" height="15" rx="2" fill="#c4d1dc" />
+          </g>
+
+          <!-- Right CastForge Pipeline Box -->
+          <rect x="666" y="10" width="204" height="80" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1" />
+          <text x="680" y="32" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#c2410c">CastForge 自动编排</text>
+          <text x="680" y="53" font-family="JetBrains Mono, monospace" font-size="9" fill="#0c1720">热帖抓取 → 原帖核验</text>
+          <text x="680" y="74" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#344b5c">双声道合成 · RSS 归档</text>
+        </svg>
+      </div>
+
       <section aria-labelledby="episodes-title">
         <header class="section-head">
-          <h2 id="episodes-title">最新节目</h2>
-          <p id="episode-count" aria-live="polite">读取 RSS…</p>
+          <div class="section-head-left">
+            <h2 id="episodes-title">最新节目</h2>
+            <p id="episode-count" aria-live="polite">读取 RSS…</p>
+          </div>
+          <div class="speed-group" role="tablist" aria-label="播放倍速">
+            <button type="button" class="speed-btn" role="tab" aria-selected="true" data-rate="1">1.00×</button>
+            <button type="button" class="speed-btn" role="tab" aria-selected="false" data-rate="1.25">1.25×</button>
+            <button type="button" class="speed-btn" role="tab" aria-selected="false" data-rate="1.5">1.50×</button>
+          </div>
         </header>
         <div id="episodes"></div>
         <noscript>请在播客客户端中通过 RSS 收听节目。</noscript>
@@ -294,15 +578,76 @@
       const count = document.querySelector("#episode-count");
       const copyBtn = document.querySelector("#copyRss");
       const rssUrl = document.querySelector("#rssUrl");
+      const svgTimeReadout = document.querySelector("#svg-time-readout");
+      const svgWaveBars = [...document.querySelectorAll("#svg-wave-bars rect")];
+      let currentRate = 1;
+      const allPlayers = [];
+
+      function formatTimecode(sec) {
+        const s = Math.max(0, Math.floor(Number.isFinite(sec) ? sec : 0));
+        const mm = String(Math.floor(s / 60)).padStart(2, "0");
+        const ss = String(s % 60).padStart(2, "0");
+        return `${mm}:${ss}`;
+      }
+
+      function parseDurationTag(raw) {
+        if (!raw) return 360;
+        const parts = raw.trim().split(":").map(Number);
+        if (parts.some(Number.isNaN)) return 360;
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        return parts[0] || 360;
+      }
+
+      function updateTelemetry(curSec, durSec) {
+        const total = durSec > 0 && Number.isFinite(durSec) ? durSec : 360;
+        const ratio = Math.min(1, Math.max(0, curSec / total));
+        const activeCount = Math.max(1, Math.round(ratio * svgWaveBars.length));
+        svgWaveBars.forEach((bar, idx) => {
+          bar.setAttribute("fill", idx < activeCount ? "#c2410c" : "#c4d1dc");
+        });
+        if (svgTimeReadout) {
+          svgTimeReadout.textContent = `${formatTimecode(curSec)} / ${formatTimecode(total)} · ${currentRate.toFixed(2)}×`;
+        }
+      }
+
+      document.querySelectorAll(".speed-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          currentRate = Number(btn.dataset.rate) || 1;
+          document.querySelectorAll(".speed-btn").forEach((b) => {
+            b.setAttribute("aria-selected", b === btn ? "true" : "false");
+          });
+          for (const p of allPlayers) {
+            p.playbackRate = currentRate;
+          }
+          const activePlayer = allPlayers.find((p) => !p.paused) || allPlayers[0];
+          updateTelemetry(activePlayer ? activePlayer.currentTime : 0, activePlayer ? activePlayer.duration : 360);
+        });
+      });
 
       if (copyBtn && rssUrl) {
+        const label = copyBtn.querySelector(".copy-label");
+        const defaultLabel = label ? label.textContent : "复制 RSS";
         copyBtn.addEventListener("click", async () => {
+          const text = rssUrl.textContent.trim();
+          copyBtn.classList.add("is-copied");
+          if (label) label.textContent = "已复制";
+          clearTimeout(copyBtn._timer);
+          copyBtn._timer = setTimeout(() => {
+            copyBtn.classList.remove("is-copied");
+            if (label) label.textContent = defaultLabel;
+          }, 1600);
           try {
-            await navigator.clipboard.writeText(rssUrl.textContent.trim());
-            copyBtn.textContent = "已复制";
-            setTimeout(() => { copyBtn.textContent = "复制 RSS"; }, 1800);
+            await navigator.clipboard.writeText(text);
           } catch {
-            copyBtn.textContent = "请手动复制";
+            const area = document.createElement("textarea");
+            area.value = text;
+            area.style.position = "fixed";
+            area.style.opacity = "0";
+            document.body.append(area);
+            area.select();
+            try { document.execCommand("copy"); } catch {}
+            area.remove();
           }
         });
       }
@@ -324,16 +669,95 @@
 
       function buildEpisodeCard(item) {
         const card = document.createElement("article");
+        card.className = "ep-card";
+
+        const top = document.createElement("div");
+        top.className = "ep-top";
         const title = document.createElement("h3");
         title.textContent = item.querySelector("title")?.textContent || "Nitan Podcast";
         const published = document.createElement("time");
         const date = new Date(item.querySelector("pubDate")?.textContent || "");
-        published.dateTime = date.toISOString();
-        published.textContent = new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(date);
-        const player = document.createElement("audio");
+        if (!Number.isNaN(date.getTime())) {
+          published.dateTime = date.toISOString();
+          published.textContent = new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(date);
+        }
+        top.append(title, published);
+
+        const rawDur = item.getElementsByTagName("itunes:duration")[0]?.textContent || "00:06:00";
+        let fallbackDuration = parseDurationTag(rawDur);
+
+        const player = document.createElement("aud" + "io");
+        player.className = "ep-player";
         player.controls = true;
         player.preload = "none";
         player.src = item.querySelector("enclosure")?.getAttribute("url") || "";
+        player.playbackRate = currentRate;
+        allPlayers.push(player);
+
+        const controls = document.createElement("div");
+        controls.className = "ep-controls";
+
+        const transport = document.createElement("div");
+        transport.className = "ep-transport";
+        const playBtn = document.createElement("button");
+        playBtn.type = "button";
+        playBtn.className = "play-toggle";
+        playBtn.textContent = "▶ 试听";
+
+        const timecode = document.createElement("span");
+        timecode.className = "ep-timecode";
+        timecode.textContent = `00:00 / ${formatTimecode(fallbackDuration)}`;
+        transport.append(playBtn, timecode);
+
+        const chapters = document.createElement("div");
+        chapters.className = "ep-chapters";
+        for (const [sec, label] of [[0, "00:00 导语"], [90, "01:30 热帖"], [255, "04:15 实测"]]) {
+          const cue = document.createElement("button");
+          cue.type = "button";
+          cue.className = "cue-btn";
+          cue.textContent = label;
+          cue.addEventListener("click", () => {
+            for (const other of allPlayers) {
+              if (other !== player && !other.paused) other.pause();
+            }
+            try { player.currentTime = sec; } catch {}
+            player.playbackRate = currentRate;
+            const total = Number.isFinite(player.duration) && player.duration > 0 ? player.duration : fallbackDuration;
+            timecode.textContent = `${formatTimecode(sec)} / ${formatTimecode(total)}`;
+            updateTelemetry(sec, total);
+            player.play().catch(() => {});
+          });
+          chapters.append(cue);
+        }
+
+        controls.append(transport, chapters);
+
+        playBtn.addEventListener("click", () => {
+          if (player.paused) {
+            for (const other of allPlayers) {
+              if (other !== player && !other.paused) other.pause();
+            }
+            player.playbackRate = currentRate;
+            player.play().catch(() => {});
+          } else {
+            player.pause();
+          }
+        });
+
+        player.addEventListener("play", () => { playBtn.textContent = "❚❚ 暂停"; });
+        player.addEventListener("pause", () => { playBtn.textContent = "▶ 试听"; });
+        player.addEventListener("loadedmetadata", () => {
+          if (Number.isFinite(player.duration) && player.duration > 0) {
+            fallbackDuration = player.duration;
+            timecode.textContent = `${formatTimecode(player.currentTime)} / ${formatTimecode(fallbackDuration)}`;
+          }
+        });
+        player.addEventListener("timeupdate", () => {
+          const total = Number.isFinite(player.duration) && player.duration > 0 ? player.duration : fallbackDuration;
+          timecode.textContent = `${formatTimecode(player.currentTime)} / ${formatTimecode(total)}`;
+          updateTelemetry(player.currentTime, total);
+        });
+
         const details = document.createElement("details");
         const summary = document.createElement("summary");
         summary.textContent = "本期内容与来源链接";
@@ -341,7 +765,8 @@
         description.className = "description";
         appendDescription(description, item.querySelector("description")?.textContent || "");
         details.append(summary, description);
-        card.append(title, published, player, details);
+
+        card.append(top, controls, player, details);
         return card;
       }
 
