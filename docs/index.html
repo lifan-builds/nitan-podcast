@@ -3,118 +3,309 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Nitan Podcast：每周六分钟，美卡论坛热门讨论精华。" />
-    <title>Nitan Podcast · 泥潭播客</title>
+    <meta name="description" content="Nitan Podcast（泥潭播客）：每周六分钟，把美卡论坛热门讨论整理成有来源可查的中文短播客。" />
+    <title>泥潭播客 · Nitan Podcast</title>
     <style>
       :root {
-        color-scheme: dark;
-        --bg: #10100f;
-        --panel: #191917;
-        --text: #f6f0e5;
-        --muted: #b9b0a2;
-        --accent: #ff6b35;
-        --line: #34312c;
+        color-scheme: light;
+        --bg: #f8fafc;
+        --panel: #ffffff;
+        --subtle: #f1f5f9;
+        --text: #0f172a;
+        --muted: #475569;
+        --accent: #c2410c;
+        --accent-hover: #9a3412;
+        --accent-soft: #fff7ed;
+        --line: #e2e8f0;
+        --line-strong: #cbd5e1;
       }
       * { box-sizing: border-box; }
+      ::selection { background: #ffedd5; color: var(--text); }
       body {
         margin: 0;
-        background:
-          radial-gradient(circle at 10% 0%, rgba(255, 107, 53, 0.18), transparent 32rem),
-          var(--bg);
+        background-color: var(--bg);
         color: var(--text);
-        font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+        font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
       }
       a { color: inherit; text-underline-offset: 0.2em; }
-      main { width: min(980px, calc(100% - 2rem)); margin: 0 auto; }
+      a:focus-visible, button:focus-visible, summary:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+        border-radius: 6px;
+      }
+      main {
+        width: min(920px, calc(100% - 2.5rem));
+        margin: 0 auto;
+        padding: 24px 0 64px;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand {
+        font-weight: 700;
+        text-decoration: none;
+        font-size: 16px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background-color: var(--accent-soft);
+        border: 1px solid #fed7aa;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .topnav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .topnav a { text-decoration: none; }
+      .topnav a:hover { color: var(--text); }
       .hero {
         display: grid;
-        grid-template-columns: 180px 1fr;
-        gap: 2rem;
-        align-items: center;
-        min-height: 58vh;
-        padding: 4rem 0 3rem;
+        grid-template-columns: 112px 1fr;
+        gap: 24px;
+        align-items: start;
+        padding: 40px 0 36px;
+        border-bottom: 1px solid var(--line);
       }
-      .cover { width: 180px; aspect-ratio: 1; border-radius: 24px; box-shadow: 0 20px 60px #0008; }
-      .eyebrow { color: var(--accent); font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
-      h1 { margin: 0.2rem 0 0.8rem; font-size: clamp(2.8rem, 8vw, 5.8rem); line-height: 0.95; letter-spacing: -0.055em; }
-      .lede { max-width: 42rem; color: var(--muted); font-size: 1.12rem; }
-      .actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.5rem; }
-      .button {
+      .hero > div {
+        min-width: 0;
+      }
+      .cover {
+        width: 112px;
+        height: 112px;
+        border-radius: 18px;
         border: 1px solid var(--line);
-        border-radius: 999px;
-        padding: 0.65rem 1rem;
-        background: var(--panel);
-        text-decoration: none;
-        font-weight: 700;
+        object-fit: cover;
       }
-      .button.primary { color: #16110e; background: var(--accent); border-color: var(--accent); }
-      .section-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--line); }
-      h2 { margin: 0; padding: 0 0 0.75rem; font-size: 1.6rem; }
-      #episodes { display: grid; gap: 1rem; padding: 1.4rem 0 4rem; }
-      article { padding: 1.2rem; background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line); border-radius: 18px; }
-      article h3 { margin: 0 0 0.25rem; font-size: 1.08rem; }
-      article time { color: var(--muted); font-size: 0.9rem; }
-      audio { width: 100%; margin: 0.9rem 0 0.4rem; }
-      details { color: var(--muted); }
-      .description { white-space: pre-wrap; }
-      .description a { color: var(--text); }
-      .about { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 0 0 4rem; }
-      .about article { min-height: 100%; }
-      footer { padding: 1.5rem 0 3rem; border-top: 1px solid var(--line); color: var(--muted); }
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(2rem, 4.5vw, 2.9rem);
+        line-height: 1.12;
+        letter-spacing: -0.03em;
+      }
+      .lede {
+        margin: 0 0 18px;
+        max-width: 44rem;
+        color: var(--muted);
+        font-size: 17px;
+      }
+      .rss-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        max-width: 560px;
+        min-width: 0;
+        padding: 8px 10px 8px 14px;
+        background-color: var(--panel);
+        border: 1px solid var(--line-strong);
+        border-radius: 10px;
+        margin-bottom: 16px;
+      }
+      .rss-bar code {
+        flex: 1;
+        min-width: 0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        color: var(--text);
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .copy-btn {
+        flex: none;
+        padding: 5px 11px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        background-color: var(--subtle);
+        color: var(--text);
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .copy-btn:hover { background-color: var(--line); }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--line-strong);
+        border-radius: 9px;
+        padding: 8px 15px;
+        background-color: var(--panel);
+        color: var(--text);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .button:hover { background-color: var(--subtle); }
+      .button.primary {
+        color: #ffffff;
+        background-color: var(--accent);
+        border-color: var(--accent);
+      }
+      .button.primary:hover { background-color: var(--accent-hover); }
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 32px 0 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      h2 { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
+      #episode-count { margin: 0; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+      #episodes { display: grid; gap: 12px; padding: 18px 0 32px; }
+      article {
+        padding: 18px 20px;
+        background-color: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      article h3 { margin: 0 0 4px; font-size: 16.5px; }
+      article time { color: var(--muted); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+      audio { width: 100%; margin: 12px 0 6px; }
+      details { color: var(--muted); font-size: 14px; }
+      details summary { cursor: pointer; font-weight: 600; color: var(--text); }
+      .description { white-space: pre-wrap; margin: 10px 0 0; line-height: 1.6; }
+      .description a { color: var(--accent); font-weight: 500; }
+      details.archive-more {
+        padding: 14px 18px;
+        background-color: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .archive-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .meta-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        padding: 0 0 36px;
+      }
+      .meta-card {
+        padding: 18px 20px;
+        background-color: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .meta-card h3 { margin: 0 0 6px; font-size: 16px; }
+      .meta-card p { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+      .meta-card p:last-child { margin-bottom: 0; }
+      footer {
+        padding-top: 22px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13.5px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+      }
       @media (max-width: 650px) {
-        .hero { grid-template-columns: 1fr; gap: 1.4rem; padding-top: 2rem; }
-        .cover { width: 120px; border-radius: 18px; }
-        .about { grid-template-columns: 1fr; }
+        .hero { grid-template-columns: 1fr; gap: 16px; padding: 28px 0; }
+        .cover { width: 84px; height: 84px; border-radius: 14px; }
+        .meta-grid { grid-template-columns: 1fr; }
+        .topbar { flex-direction: column; align-items: flex-start; }
       }
     </style>
   </head>
   <body>
     <main>
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <a class="brand" href="./">泥潭播客 · Nitan Podcast</a>
+          <span class="badge">每周更新 · 六分钟中文短播客</span>
+        </div>
+        <nav class="topnav" aria-label="顶部导航">
+          <a href="#episodes-title">节目归档</a>
+          <a href="https://github.com/lifan-builds/nitan-podcast/blob/main/RETROSPECTIVE.md">18 期复盘 ↗</a>
+          <a href="https://github.com/lifan-builds/castforge">CastForge ↗</a>
+        </nav>
+      </header>
+
       <section class="hero">
-        <img class="cover" src="https://github.com/lifan-builds/nitan-podcast/raw/main/assets/cover.png" alt="Nitan Podcast 封面" />
+        <img class="cover" src="https://github.com/lifan-builds/nitan-podcast/raw/main/assets/cover.png" alt="Nitan Podcast 封面" width="112" height="112" />
         <div>
-          <div class="eyebrow">每周 · 六分钟 · 简体中文</div>
           <h1>泥潭播客</h1>
-          <p class="lede">把美卡论坛一周的热门讨论整理成短播客：事实先讲清，再听社区里的经验、分歧和意外发现。</p>
+          <p class="lede">把美卡论坛一周的热门讨论整理成六分钟短播客：事实先讲清，再听社区里的实测经验、分歧与意外发现。</p>
+          <div class="rss-bar" role="region" aria-label="RSS 订阅地址">
+            <code id="rssUrl">https://lifan-builds.github.io/nitan-podcast/feed.xml</code>
+            <button type="button" class="copy-btn" id="copyRss">复制 RSS</button>
+          </div>
           <nav class="actions" aria-label="订阅与项目链接">
             <a class="button primary" href="https://podcasts.apple.com/us/podcast/nitan-podcast/id1888784962">Apple Podcasts</a>
             <a class="button" href="https://open.spotify.com/show/3jjd0ozToYgW7yje7mfYCg">Spotify</a>
-            <a class="button" href="feed.xml">RSS</a>
-            <a class="button" href="https://www.uscardforum.com/t/topic/494521">美卡论坛</a>
+            <a class="button" href="feed.xml">RSS 订阅</a>
+            <a class="button" href="https://www.uscardforum.com/t/topic/494521">美卡论坛讨论帖 ↗</a>
           </nav>
         </div>
       </section>
 
       <section aria-labelledby="episodes-title">
         <header class="section-head">
-          <h2 id="episodes-title">节目归档</h2>
+          <h2 id="episodes-title">最新节目</h2>
           <p id="episode-count" aria-live="polite">读取 RSS…</p>
         </header>
         <div id="episodes"></div>
         <noscript>请在播客客户端中通过 RSS 收听节目。</noscript>
       </section>
 
-      <section class="about" aria-label="关于项目">
-        <article>
-          <h2>从社区到耳机</h2>
-          <p>节目从热门主题中选择有信息量的原帖和回复，生成可追溯的来源文档，再由 NotebookLM 制作音频。Apple、Spotify 和 RSS 使用同一套稳定的公开地址。</p>
+      <section class="meta-grid" aria-label="制作与开源框架">
+        <div class="meta-card">
+          <h3>从社区原帖到可追溯音频</h3>
+          <p>每周从热门主题筛选高信息量原帖与回复，生成带完整来源链接的文档，再合成为双人中文对话音频。</p>
           <p><a href="https://github.com/lifan-builds/nitan-podcast/blob/main/RETROSPECTIVE.md">阅读 18 期自动化制作复盘 →</a></p>
-        </article>
-        <article>
-          <h2>Powered by CastForge</h2>
-          <p>可复用的编排、音频集成和发布安全机制已经提取为开源 Python 框架 CastForge；本仓库继续拥有泥潭播客的编辑规则、品牌和订阅地址。</p>
+        </div>
+        <div class="meta-card">
+          <h3>Powered by CastForge</h3>
+          <p>底层的来源校验、音频编排与安全发布流程已提取为开源 Python 框架 CastForge。</p>
           <p><a href="https://github.com/lifan-builds/castforge">在 GitHub 查看 CastForge →</a></p>
-        </article>
+        </div>
       </section>
 
       <footer>
-        <p>Nitan Podcast 是独立社区项目，与美卡论坛官方无隶属关系。节目可能包含自动生成内容，请以链接中的原帖为准。</p>
+        <span>Nitan Podcast 是独立社区项目，与美卡论坛官方无隶属关系。节目内容请以原帖链接为准。</span>
+        <span><a href="https://clifan.com">Lifan Builds</a> · <a href="https://github.com/lifan-builds/nitan-podcast">GitHub</a></span>
       </footer>
     </main>
 
     <script>
       const episodes = document.querySelector("#episodes");
       const count = document.querySelector("#episode-count");
+      const copyBtn = document.querySelector("#copyRss");
+      const rssUrl = document.querySelector("#rssUrl");
+
+      if (copyBtn && rssUrl) {
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(rssUrl.textContent.trim());
+            copyBtn.textContent = "已复制";
+            setTimeout(() => { copyBtn.textContent = "复制 RSS"; }, 1800);
+          } catch {
+            copyBtn.textContent = "请手动复制";
+          }
+        });
+      }
 
       function appendDescription(container, text) {
         const pattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
@@ -131,6 +322,29 @@
         container.append(document.createTextNode(text.slice(cursor)));
       }
 
+      function buildEpisodeCard(item) {
+        const card = document.createElement("article");
+        const title = document.createElement("h3");
+        title.textContent = item.querySelector("title")?.textContent || "Nitan Podcast";
+        const published = document.createElement("time");
+        const date = new Date(item.querySelector("pubDate")?.textContent || "");
+        published.dateTime = date.toISOString();
+        published.textContent = new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(date);
+        const player = document.createElement("audio");
+        player.controls = true;
+        player.preload = "none";
+        player.src = item.querySelector("enclosure")?.getAttribute("url") || "";
+        const details = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.textContent = "本期内容与来源链接";
+        const description = document.createElement("p");
+        description.className = "description";
+        appendDescription(description, item.querySelector("description")?.textContent || "");
+        details.append(summary, description);
+        card.append(title, published, player, details);
+        return card;
+      }
+
       fetch("feed.xml")
         .then((response) => {
           if (!response.ok) throw new Error(`RSS returned ${response.status}`);
@@ -139,28 +353,24 @@
         .then((xml) => new DOMParser().parseFromString(xml, "application/xml"))
         .then((feed) => {
           const items = [...feed.querySelectorAll("channel > item")];
-          count.textContent = `${items.length} 期`;
-          for (const item of items) {
-            const card = document.createElement("article");
-            const title = document.createElement("h3");
-            title.textContent = item.querySelector("title")?.textContent || "Nitan Podcast";
-            const published = document.createElement("time");
-            const date = new Date(item.querySelector("pubDate")?.textContent || "");
-            published.dateTime = date.toISOString();
-            published.textContent = new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(date);
-            const player = document.createElement("audio");
-            player.controls = true;
-            player.preload = "none";
-            player.src = item.querySelector("enclosure")?.getAttribute("url") || "";
-            const details = document.createElement("details");
+          count.textContent = `共 ${items.length} 期`;
+          const recent = items.slice(0, 3);
+          const older = items.slice(3);
+          for (const item of recent) {
+            episodes.append(buildEpisodeCard(item));
+          }
+          if (older.length > 0) {
+            const archive = document.createElement("details");
+            archive.className = "archive-more";
             const summary = document.createElement("summary");
-            summary.textContent = "本期内容与来源";
-            const description = document.createElement("p");
-            description.className = "description";
-            appendDescription(description, item.querySelector("description")?.textContent || "");
-            details.append(summary, description);
-            card.append(title, published, player, details);
-            episodes.append(card);
+            summary.textContent = `展开全部历史节目（另外 ${older.length} 期）`;
+            const list = document.createElement("div");
+            list.className = "archive-list";
+            for (const item of older) {
+              list.append(buildEpisodeCard(item));
+            }
+            archive.append(summary, list);
+            episodes.append(archive);
           }
         })
         .catch((error) => {
