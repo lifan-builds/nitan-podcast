@@ -77,3 +77,11 @@ def test_castforge_dependency_is_pinned_in_requirements() -> None:
     assert "castforge @ git+https://github.com/lifan-builds/castforge.git@v0.1.3" in REQUIREMENTS
     assert "castforge.git@" not in WORKFLOW
     assert "$PY -m pip install -q -r requirements.txt" in WORKFLOW
+
+
+def test_late_sunday_schedule_is_anchored_to_sunday_and_caffeinated() -> None:
+    week = _step("Compute ISO week")
+    assert 'date -v-1d +%G-W%V' in week
+    assert "caffeinate -i $PY run_pipeline.py" in _step("Extract and export Markdown")
+    assert "caffeinate -i $PY run_pipeline.py" in _step("Generate audio (NotebookLM)")
+
