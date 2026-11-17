@@ -74,7 +74,11 @@ jobs:
       - name: Compute ISO week
         id: week
         run: |
-          ISO_WEEK=$(date +%G-W%V)
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date +%u)" = "1" ]; then
+            ISO_WEEK=$(date -v-1d +%G-W%V)
+          else
+            ISO_WEEK=$(date +%G-W%V)
+          fi
           echo "iso_week=$ISO_WEEK" >> $GITHUB_OUTPUT
           echo "tag=v${ISO_WEEK}" >> $GITHUB_OUTPUT
 
@@ -113,13 +117,14 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         id: export
         run: |
-          MD_FILE="exports/weekly_meika_${{ steps.week.outputs.iso_week }}.md"
-          FLAGS="--dated --log-level INFO"
+          MD_NAME="weekly_meika_${{ steps.week.outputs.iso_week }}.md"
+          MD_FILE="exports/$MD_NAME"
+          FLAGS="--dated --output-filename $MD_NAME --log-level INFO"
           # Skip briefing if no Gemini key in .env
           if ! grep -q '^GEMINI_API_KEY=.\+' .env 2>/dev/null; then
             FLAGS="$FLAGS --skip-briefing"
           fi
-          $PY run_pipeline.py $FLAGS
+          caffeinate -i $PY run_pipeline.py $FLAGS
           echo "md_path=$MD_FILE" >> $GITHUB_OUTPUT
 
       # --- Phase 2: NotebookLM Audio (reuses Phase 1 markdown, no MCP) ---
@@ -131,7 +136,7 @@ jobs:
         id: audio
         run: |
           MP3="releases/weekly_meika_${{ steps.week.outputs.iso_week }}.mp3"
-          $PY run_pipeline.py --markdown-input "${{ steps.export.outputs.md_path }}" \
+          caffeinate -i $PY run_pipeline.py --markdown-input "${{ steps.export.outputs.md_path }}" \
             --publish-notebooklm --notebooklm-audio-out "$MP3" --log-level INFO
           DURATION=$($PY scripts/prepare_audio.py "$MP3")
           echo "duration=$DURATION" >> $GITHUB_OUTPUT

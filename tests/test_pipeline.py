@@ -22,11 +22,11 @@ from extractor import (
     threads_to_source_markdown,
     tool_result_to_threads,
 )
+from castforge.briefing import SYSTEM_PROMPT, write_briefing_markdown
 from castforge.export import (
     DEFAULT_MARKDOWN_NAME,
     export_for_notebooklm,
 )
-from castforge.briefing import SYSTEM_PROMPT, write_briefing_markdown
 
 SAMPLE_FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "sample_extraction.json"
 
@@ -449,7 +449,7 @@ class TestParseHelpers:
 
 
 # ---------------------------------------------------------------------------
-# castforge.export
+# notebooklm_export.py
 # ---------------------------------------------------------------------------
 
 class TestNotebookLMExport:
@@ -491,11 +491,11 @@ class TestNotebookLMExport:
 
 
 # ---------------------------------------------------------------------------
-# castforge.briefing
+# briefing_writer.py
 # ---------------------------------------------------------------------------
 
 class TestBriefingWriter:
-    """Tests for the CastForge briefing module."""
+    """Tests for briefing_writer module."""
 
     def test_system_prompt_exists_and_is_chinese(self):
         assert isinstance(SYSTEM_PROMPT, str)
@@ -514,6 +514,48 @@ class TestBriefingWriter:
         monkeypatch.setenv("GEMINI_API_KEY", "   ")
         with pytest.raises(RuntimeError, match="GEMINI_API_KEY"):
             write_briefing_markdown("some text")
+
+
+# ---------------------------------------------------------------------------
+# run_pipeline.py -- argument parsing
+# ---------------------------------------------------------------------------
+
+class TestRunPipelineArgParsing:
+    """Tests for CLI argument parsing via castforge.pipeline.build_parser()."""
+
+    def _parse(self, argv: list[str]) -> Any:
+        from castforge.pipeline import build_parser
+
+        return build_parser(episode_file_prefix="weekly_meika").parse_args(argv)
+
+    def test_defaults(self):
+        args = self._parse([])
+        assert args.skip_briefing is False
+        assert args.dated is False
+        assert args.publish_notebooklm is False
+        assert args.export_dir is None
+
+    def test_skip_briefing_flag(self):
+        args = self._parse(["--skip-briefing"])
+        assert args.skip_briefing is True
+
+    def test_dated_flag(self):
+        args = self._parse(["--dated"])
+        assert args.dated is True
+
+    def test_publish_notebooklm_flag(self):
+        args = self._parse(["--publish-notebooklm"])
+        assert args.publish_notebooklm is True
+
+    def test_export_dir_argument(self):
+        args = self._parse(["--export-dir", "/tmp/out"])
+        assert args.export_dir == Path("/tmp/out")
+
+    def test_combined_flags(self):
+        args = self._parse(["--skip-briefing", "--dated", "--publish-notebooklm"])
+        assert args.skip_briefing is True
+        assert args.dated is True
+        assert args.publish_notebooklm is True
 
 
 # ---------------------------------------------------------------------------

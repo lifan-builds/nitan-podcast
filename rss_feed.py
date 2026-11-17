@@ -16,49 +16,40 @@ from datetime import datetime, timezone
 from email.utils import format_datetime
 from pathlib import Path
 
+from castforge.rss import ATOM_NS, ITUNES_NS
 from publisher import (
     PODCAST_CATEGORY,
     PODCAST_DESCRIPTION,
     PODCAST_LANGUAGE,
     PODCAST_LINK,
     SERIES_NAME,
-    SERIES_ZH,
-    TAGLINE,
     episode_guid,
     episode_metadata,
 )
-from public_contract import PUBLIC_AUDIO_BASE_URL, PUBLIC_COVER_ART_URL, PUBLIC_FEED_URL
+from public_contract import PUBLIC_COVER_ART_URL, PUBLIC_FEED_URL
 
 logger = logging.getLogger(__name__)
 
-ITUNES_NS = "http://www.itunes.com/dtds/podcast-1.0.dtd"
-ATOM_NS = "http://www.w3.org/2005/Atom"
-
 DEFAULT_FEED_PATH = Path("docs/feed.xml")
 
-ET.register_namespace("itunes", ITUNES_NS)
-ET.register_namespace("atom", ATOM_NS)
 
+def _env(key: str, default: str) -> str:
+    return os.environ.get(key, "").strip() or default
 
-# ---------------------------------------------------------------------------
-# Config from env
-# ---------------------------------------------------------------------------
 
 def _podcast_config() -> dict[str, str]:
     """Read podcast metadata from env vars with sensible defaults."""
     return {
         "title": SERIES_NAME,
-        "description": os.environ.get("PODCAST_DESCRIPTION", "").strip() or PODCAST_DESCRIPTION,
-        "link": os.environ.get("PODCAST_LINK", "").strip() or PODCAST_LINK,
+        "description": _env("PODCAST_DESCRIPTION", PODCAST_DESCRIPTION),
+        "link": _env("PODCAST_LINK", PODCAST_LINK),
         "language": PODCAST_LANGUAGE,
-        "author": os.environ.get("PODCAST_AUTHOR", "").strip() or SERIES_NAME,
-        "owner_name": os.environ.get("PODCAST_OWNER_NAME", "").strip() or SERIES_NAME,
-        "owner_email": os.environ.get("PODCAST_OWNER_EMAIL", "").strip() or "lifan.builds@gmail.com",
-        "cover_art_url": os.environ.get("PODCAST_COVER_ART_URL", "").strip()
-            or PUBLIC_COVER_ART_URL,
-        "feed_url": os.environ.get("PODCAST_FEED_URL", "").strip()
-            or PUBLIC_FEED_URL,
-        "category": os.environ.get("PODCAST_CATEGORY", "").strip() or PODCAST_CATEGORY,
+        "author": _env("PODCAST_AUTHOR", SERIES_NAME),
+        "owner_name": _env("PODCAST_OWNER_NAME", SERIES_NAME),
+        "owner_email": _env("PODCAST_OWNER_EMAIL", "lifan.builds@gmail.com"),
+        "cover_art_url": _env("PODCAST_COVER_ART_URL", PUBLIC_COVER_ART_URL),
+        "feed_url": _env("PODCAST_FEED_URL", PUBLIC_FEED_URL),
+        "category": _env("PODCAST_CATEGORY", PODCAST_CATEGORY),
     }
 
 
@@ -156,16 +147,6 @@ def _load_existing_items(feed_path: Path) -> list[ET.Element]:
         return []
 
 
-def _find_item_guid(item: ET.Element) -> str | None:
-    guid_el = item.find("guid")
-    return guid_el.text if guid_el is not None else None
-
-
-# ---------------------------------------------------------------------------
-# Main entry point
-# ---------------------------------------------------------------------------
-
-PAGES_AUDIO_BASE = PUBLIC_AUDIO_BASE_URL
 EPISODES_DIR = Path("docs/episodes")
 
 
@@ -229,8 +210,7 @@ def generate_rss_feed(
     )
 
     # Load existing items and upsert
-    existing = _load_existing_items(out)
-    items = [i for i in existing if _find_item_guid(i) != guid]
+    items = [i for i in _load_existing_items(out) if i.findtext("guid") != guid]
     items.insert(0, new_item)  # newest first
 
     # Build full feed
@@ -241,10 +221,7 @@ def generate_rss_feed(
 
     ET.indent(rss, space="  ")
     out.parent.mkdir(parents=True, exist_ok=True)
-    tree = ET.ElementTree(rss)
-    tree.write(out, xml_declaration=True, encoding="unicode")
-    # ElementTree.write() omits trailing newline; append one for POSIX compliance
-    out.write_text(out.read_text(encoding="utf-8").rstrip() + "\n", encoding="utf-8")
+    out.write_text(ET.tostring(rss, encoding="unicode", xml_declaration=True) + "\n", encoding="utf-8")
 
     logger.info("RSS feed updated: %s (%d episode(s))", out, len(items))
     return out

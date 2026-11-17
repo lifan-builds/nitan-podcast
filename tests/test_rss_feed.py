@@ -13,7 +13,6 @@ from publisher import episode_guid
 SAMPLE_FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "sample_extraction.json"
 from rss_feed import (
     ATOM_NS,
-    DEFAULT_FEED_PATH,
     ITUNES_NS,
     _build_channel,
     _build_item,

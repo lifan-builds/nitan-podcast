@@ -5,17 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 from publisher import (
     SERIES_NAME,
     SERIES_ZH,
-    _extract_thread_titles,
     _extract_threads,
-    announcement_post_markdown,
     episode_metadata,
     episode_reply_markdown,
-    write_announcement_post,
     write_forum_post,
 )
 
@@ -51,17 +46,6 @@ class TestExtractThreads:
         threads = _extract_threads(md)
         assert len(threads) == 1
         assert threads[0]["title"] == "Test Title"
-
-
-class TestExtractThreadTitles:
-
-    def test_returns_titles(self, sample_markdown: str):
-        titles = _extract_thread_titles(sample_markdown)
-        assert len(titles) == 2
-        assert titles[0] == "示例：某酒店卡史高讨论"
-
-    def test_empty_returns_empty(self):
-        assert _extract_thread_titles("") == []
 
 
 # ---------------------------------------------------------------------------
@@ -151,26 +135,7 @@ class TestEpisodeReplyMarkdown:
 
 
 # ---------------------------------------------------------------------------
-# announcement_post_markdown
-# ---------------------------------------------------------------------------
-
-class TestAnnouncementPost:
-
-    def test_contains_series_name(self):
-        post = announcement_post_markdown()
-        assert SERIES_NAME in post
-
-    def test_contains_faq(self):
-        post = announcement_post_markdown()
-        assert "FAQ" in post
-
-    def test_contains_tech_stack(self):
-        post = announcement_post_markdown()
-        assert "Nitan MCP" in post
-
-
-# ---------------------------------------------------------------------------
-# File writers
+# File writer
 # ---------------------------------------------------------------------------
 
 class TestWriteForumPost:
@@ -196,12 +161,3 @@ class TestWriteForumPost:
         out = tmp_path / "custom_post.md"
         post_path = write_forum_post(md_path, output_path=out)
         assert post_path == out.resolve()
-
-
-class TestWriteAnnouncementPost:
-
-    def test_writes_file(self, tmp_path: Path):
-        out = tmp_path / "announce.md"
-        path = write_announcement_post(out)
-        assert path.is_file()
-        assert SERIES_NAME in path.read_text(encoding="utf-8")

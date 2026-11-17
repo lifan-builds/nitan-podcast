@@ -65,8 +65,7 @@ def test_default_storage_uses_sdk_resolution(monkeypatch):
 def test_access_checks_target_notebook_inside_client_context(monkeypatch):
     client = AsyncMock()
     client.__aenter__.return_value = client
-    factory = lambda storage: client
-    monkeypatch.setattr(preflight.NotebookLMClient, "from_storage", factory)
+    monkeypatch.setattr(preflight.NotebookLMClient, "from_storage", lambda _storage: client)
     asyncio.run(preflight.check_access("/tmp/session.json", "test-notebook"))
     client.notebooks.get.assert_awaited_once_with("test-notebook")
     client.__aexit__.assert_awaited_once()

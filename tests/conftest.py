@@ -39,11 +39,6 @@ def sample_threads() -> list[dict[str, Any]]:
 
 
 @pytest.fixture
-def sample_fixture_path() -> Path:
-    return SAMPLE_FIXTURE
-
-
-@pytest.fixture
 def sample_markdown(sample_threads: list[dict[str, Any]]) -> str:
     """Markdown generated from sample_threads via threads_to_source_markdown."""
     from extractor import threads_to_source_markdown

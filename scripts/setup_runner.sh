@@ -63,7 +63,6 @@ fi
 # .env
 if [ -f "$ROOT/.env" ]; then
   ok ".env file exists"
-  # Check key vars
   for var in MCP_SERVER_COMMAND MCP_EXTRACT_TOOL NOTEBOOKLM_NOTEBOOK_ID; do
     if grep -q "^${var}=.\+" "$ROOT/.env" 2>/dev/null; then
       ok ".env: $var is set"

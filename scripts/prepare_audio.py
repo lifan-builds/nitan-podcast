@@ -32,7 +32,6 @@ def is_mp3(info: dict) -> bool:
 def prepare(path: Path) -> str:
     info = probe(path)
     if not is_mp3(info):
-        # Keep the download intact unless conversion and verification succeed.
         with tempfile.NamedTemporaryFile(dir=path.parent, suffix=".mp3", delete=False) as tmp:
             converted = Path(tmp.name)
         try:

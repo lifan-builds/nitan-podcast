@@ -19,6 +19,7 @@ from typing import Any
 
 import anyio
 import mcp.types as types
+import yaml
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, get_default_environment, stdio_client
 
@@ -69,12 +70,6 @@ def _detail_post_limit() -> int:
     return max(1, value)
 
 
-def _merge_process_env() -> dict[str, str]:
-    base = get_default_environment()
-    base.update(dict(os.environ))
-    return base
-
-
 def _stdio_params() -> StdioServerParameters:
     command = os.environ.get(ENV_COMMAND, "").strip()
     if not command:
@@ -83,17 +78,15 @@ def _stdio_params() -> StdioServerParameters:
             f"For CI demos without a server, set {ENV_FIXTURE} to a JSON file path instead."
         )
     args = _parse_json_list(os.environ.get(ENV_ARGS))
-    extra_env: dict[str, str] | None
+    parsed = {}
     raw_se = os.environ.get(ENV_SERVER_ENV, "").strip()
     if raw_se:
         parsed = json.loads(raw_se)
         if not isinstance(parsed, dict):
             raise ValueError("MCP_SERVER_ENV_JSON must be a JSON object of string values")
-        merged = _merge_process_env()
-        merged.update({str(k): str(v) for k, v in parsed.items()})
-        extra_env = merged
-    else:
-        extra_env = _merge_process_env()
+    extra_env = get_default_environment()
+    extra_env.update(os.environ)
+    extra_env.update({str(k): str(v) for k, v in parsed.items()})
     return StdioServerParameters(command=command, args=args, env=extra_env)
 
 
@@ -202,7 +195,6 @@ def _extract_topic_id(thread: dict[str, Any]) -> int | None:
             pass
     url = thread.get("url", "")
     # Pattern: /t/topic/493110 or /t/slug/493110
-    import re
     m = re.search(r"/t/[^/]+/(\d+)", url)
     if m:
         return int(m.group(1))
@@ -381,7 +373,7 @@ def _enrich_thread(thread: dict[str, Any], posts: list[dict[str, Any]]) -> dict[
         enriched["informative_replies"] = informative_replies
 
     # Reply count
-    enriched["reply_count"] = len(posts) - 1 if len(posts) > 1 else 0
+    enriched["reply_count"] = len(posts) - 1
     return enriched
 
 
@@ -503,8 +495,6 @@ def _load_category_voice_guide(path: Path = CATEGORY_VOICE_PATH) -> dict[str, An
             "categories": {},
         }
 
-    import yaml
-
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     if not isinstance(data, dict):
         raise ValueError(f"Category voice guide must be a YAML object: {path}")
@@ -514,18 +504,7 @@ def _load_category_voice_guide(path: Path = CATEGORY_VOICE_PATH) -> dict[str, An
 
 
 def _category_voice(category: str, guide: dict[str, Any]) -> dict[str, Any]:
-    categories = guide.get("categories", {})
-    if not isinstance(categories, dict):
-        categories = {}
-    default = guide.get("default", {})
-    if not isinstance(default, dict):
-        default = {}
-    category_note = categories.get(category, {})
-    if not isinstance(category_note, dict):
-        category_note = {}
-    merged = dict(default)
-    merged.update(category_note)
-    return merged
+    return {**guide["default"], **guide["categories"].get(category, {})}
 
 
 def _format_value(val: Any) -> str:

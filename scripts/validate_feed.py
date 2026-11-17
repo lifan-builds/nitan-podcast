@@ -12,6 +12,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import subprocess
 import sys
 import time
@@ -22,10 +23,10 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from castforge.rss import ITUNES_NS
 from public_contract import PUBLIC_FEED_URL
 
 LIVE_FEED_URL = PUBLIC_FEED_URL
-ITUNES_NS = "http://www.itunes.com/dtds/podcast-1.0.dtd"
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -185,28 +186,21 @@ def load_feed(source: str) -> ET.Element:
     return ET.fromstring(data)
 
 
-def _feed_items(root: ET.Element) -> list[ET.Element]:
+def _newest_enclosure(root: ET.Element) -> ET.Element | None:
     channel = root.find("channel")
     if channel is None:
-        return []
-    return channel.findall("item")
+        return None
+    item = channel.find("item")
+    return item.find("enclosure") if item is not None else None
 
 
 def _newest_audio_url(root: ET.Element) -> str:
-    items = _feed_items(root)
-    if not items:
-        return ""
-    enc = items[0].find("enclosure")
-    if enc is None:
-        return ""
-    return enc.get("url", "")
+    enc = _newest_enclosure(root)
+    return enc.get("url", "") if enc is not None else ""
 
 
 def _newest_enclosure_length(root: ET.Element) -> int:
-    items = _feed_items(root)
-    if not items:
-        return 0
-    enc = items[0].find("enclosure")
+    enc = _newest_enclosure(root)
     if enc is None:
         return 0
     try:
@@ -223,38 +217,15 @@ def _has_audio_url(items: list[ET.Element], expected_audio_url: str) -> bool:
     return False
 
 
-def wait_for_deploy(expected_url: str, timeout: int) -> bool:
-    """Poll until the audio URL returns 200, or timeout."""
-    print(f"\nWaiting up to {timeout}s for GitHub Pages deploy...")
+def _poll_until(timeout: int, label: str, check):
+    print(f"\nWaiting up to {timeout}s for {label}...")
     start = time.time()
     while time.time() - start < timeout:
         try:
-            hdrs = _curl_head(expected_url)
-            if int(hdrs.get("_status", "0")) == 200:
-                elapsed = int(time.time() - start)
-                print(f"  Deploy detected after {elapsed}s")
-                return True
-        except Exception:
-            pass
-        time.sleep(10)
-    print(f"  Timed out after {timeout}s")
-    return False
-
-
-def wait_for_feed_deploy(source: str, timeout: int, expected_audio_url: str = "") -> ET.Element | None:
-    """Poll live RSS until the newest enclosure is deployed and populated."""
-    print(f"\nWaiting up to {timeout}s for feed deploy...")
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            root = load_feed(source)
-            audio_url = _newest_audio_url(root)
-            length = _newest_enclosure_length(root)
-            url_matches = not expected_audio_url or audio_url == expected_audio_url
-            if url_matches and audio_url and length > 0:
-                elapsed = int(time.time() - start)
-                print(f"  Feed deploy detected after {elapsed}s")
-                return root
+            result = check()
+            if result:
+                print(f"  {label.capitalize()} detected after {int(time.time() - start)}s")
+                return result
         except Exception:
             pass
         time.sleep(10)
@@ -262,30 +233,40 @@ def wait_for_feed_deploy(source: str, timeout: int, expected_audio_url: str = ""
     return None
 
 
+def wait_for_deploy(expected_url: str, timeout: int) -> bool:
+    """Poll until the audio URL returns 200, or timeout."""
+    return bool(
+        _poll_until(
+            timeout,
+            "GitHub Pages deploy",
+            lambda: int(_curl_head(expected_url).get("_status", "0")) == 200,
+        )
+    )
+
+
+def wait_for_feed_deploy(source: str, timeout: int, expected_audio_url: str = "") -> ET.Element | None:
+    """Poll live RSS until the newest enclosure is deployed and populated."""
+    def _check() -> ET.Element | None:
+        root = load_feed(source)
+        audio_url = _newest_audio_url(root)
+        url_matches = not expected_audio_url or audio_url == expected_audio_url
+        return root if url_matches and audio_url and _newest_enclosure_length(root) > 0 else None
+
+    return _poll_until(timeout, "feed deploy", _check)
+
+
 def main(argv: list[str] | None = None) -> int:
-    args = argv if argv is not None else sys.argv[1:]
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("source", nargs="?", default=LIVE_FEED_URL)
+    parser.add_argument("--wait-for-deploy", type=int, nargs="?", const=120, default=0)
+    parser.add_argument("--expected-audio-url", default="")
+    parser.add_argument("--local-only", action="store_true")
+    parsed = parser.parse_args(argv if argv is not None else sys.argv[1:])
 
-    source = LIVE_FEED_URL
-    check_live = True
-    deploy_wait = 0
-    expected_audio_url = ""
-
-    i = 0
-    while i < len(args):
-        if args[i] == "--wait-for-deploy":
-            deploy_wait = int(args[i + 1]) if i + 1 < len(args) else 120
-            i += 2
-        elif args[i] == "--expected-audio-url":
-            expected_audio_url = args[i + 1] if i + 1 < len(args) else ""
-            i += 2
-        elif args[i] == "--local-only":
-            check_live = False
-            i += 1
-        else:
-            source = args[i]
-            if Path(source).is_file():
-                check_live = False
-            i += 1
+    source = parsed.source
+    check_live = not parsed.local_only and not Path(source).is_file()
+    deploy_wait = parsed.wait_for_deploy
+    expected_audio_url = parsed.expected_audio_url
 
     root = load_feed(source)
     channel = root.find("channel")
