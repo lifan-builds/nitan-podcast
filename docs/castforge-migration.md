@@ -52,10 +52,11 @@ The CastForge migration changes code ownership only; it does not rewrite the fee
 
 ## Validation
 
-Run the offline suite with the current CastForge checkout when developing the two repositories together:
+Install the sibling `castforge` checkout editable into `.venv` when developing both repositories together, then run the offline suite:
 
 ```bash
-PYTHONPATH=/path/to/castforge pytest tests/ -v
+.venv/bin/pip install --no-deps -e ../castforge
+.venv/bin/pytest tests/ -v
 ```
 
 The fixture smoke remains offline and disposable:
