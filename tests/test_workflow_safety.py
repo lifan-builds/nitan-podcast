@@ -84,3 +84,12 @@ def test_late_sunday_schedule_is_anchored_to_sunday_and_caffeinated() -> None:
     assert 'date -v-1d +%G-W%V' in week
     assert "caffeinate -i $PY run_pipeline.py" in _step("Extract and export Markdown")
     assert "caffeinate -i $PY run_pipeline.py" in _step("Generate audio (NotebookLM)")
+
+
+def test_worker_holds_macos_awake_across_entire_job_including_completion() -> None:
+    step_name = "Hold macOS awake until worker completes job"
+    step = _step(step_name)
+    assert WORKFLOW.index(step_name) < WORKFLOW.index("actions/checkout@v5")
+    assert "\n        if:" not in step
+    assert 'RUNNER_TRACKING_ID=""' in step
+    assert "/usr/bin/caffeinate -i -s -w \"$PPID\"" in step

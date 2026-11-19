@@ -56,6 +56,11 @@ jobs:
       # The evening retry is Monday in UTC but belongs to Sunday's ISO week.
       TZ: America/Los_Angeles
     steps:
+      - name: Hold macOS awake until worker completes job
+        working-directory: /tmp
+        run: |
+          RUNNER_TRACKING_ID="" nohup /usr/bin/caffeinate -i -s -w "$PPID" </dev/null >/dev/null 2>&1 &
+
       - uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
