@@ -226,8 +226,8 @@ def _poll_until(timeout: int, label: str, check):
             if result:
                 print(f"  {label.capitalize()} detected after {int(time.time() - start)}s")
                 return result
-        except Exception:
-            pass
+        except (OSError, subprocess.SubprocessError, ValueError, ET.ParseError) as exc:
+            print(f"  Poll retry ({label}): {exc}")
         time.sleep(10)
     print(f"  Timed out after {timeout}s")
     return None
