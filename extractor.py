@@ -10,10 +10,12 @@ Output is **key information** as `list[dict]` for NotebookLM-oriented Markdown.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import logging
 import os
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -70,6 +72,18 @@ def _detail_post_limit() -> int:
     return max(1, value)
 
 
+def _resolve_mcp_args(args: list[str]) -> list[str]:
+    if not any("@nitansde/mcp" in a for a in args) or importlib.util.find_spec("curl_cffi") is None:
+        return args
+    resolved = list(args)
+    if "--python_path" in resolved:
+        idx = resolved.index("--python_path")
+        if idx + 1 < len(resolved):
+            resolved[idx + 1] = sys.executable
+            return resolved
+    return [*resolved, "--python_path", sys.executable]
+
+
 def _stdio_params() -> StdioServerParameters:
     command = os.environ.get(ENV_COMMAND, "").strip()
     if not command:
@@ -77,7 +91,7 @@ def _stdio_params() -> StdioServerParameters:
             f"Set {ENV_COMMAND} to the nitan-MCP executable (e.g. path to binary or `uvx`). "
             f"For CI demos without a server, set {ENV_FIXTURE} to a JSON file path instead."
         )
-    args = _parse_json_list(os.environ.get(ENV_ARGS))
+    args = _resolve_mcp_args(_parse_json_list(os.environ.get(ENV_ARGS)))
     parsed = {}
     raw_se = os.environ.get(ENV_SERVER_ENV, "").strip()
     if raw_se:

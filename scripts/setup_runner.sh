@@ -30,7 +30,7 @@ fi
 if [ -x "$ROOT/.venv/bin/python" ]; then
   ok "venv: $ROOT/.venv/bin/python"
 else
-  fail "venv not found at $ROOT/.venv — run: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"
+  fail "venv not found at $ROOT/.venv — run: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requirements-integrations.txt"
 fi
 
 # Node

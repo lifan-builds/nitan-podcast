@@ -18,6 +18,7 @@ from extractor import (
     _parse_tool_arguments,
     _parse_topic_text,
     _pick_informative_replies,
+    _resolve_mcp_args,
     select_threads,
     threads_to_source_markdown,
     tool_result_to_threads,
@@ -446,6 +447,16 @@ class TestParseHelpers:
     def test_parse_tool_arguments_not_dict_raises(self):
         with pytest.raises(ValueError):
             _parse_tool_arguments("[1,2]")
+
+    def test_resolve_mcp_args_binds_active_venv_python(self):
+        import sys
+        assert _resolve_mcp_args(["-y", "@nitansde/mcp@latest", "--python_path", "/stale/.venv/bin/python"]) == [
+            "-y", "@nitansde/mcp@latest", "--python_path", sys.executable,
+        ]
+        assert _resolve_mcp_args(["-y", "@nitansde/mcp@latest"]) == [
+            "-y", "@nitansde/mcp@latest", "--python_path", sys.executable,
+        ]
+        assert _resolve_mcp_args(["other-mcp"]) == ["other-mcp"]
 
 
 # ---------------------------------------------------------------------------
